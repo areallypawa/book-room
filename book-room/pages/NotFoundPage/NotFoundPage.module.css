@@ -1,0 +1,47 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 20px;
+    min-height: 60vh;
+  }
+  
+  .errorCode {
+    font-size: 5rem;
+    font-weight: 800;
+    color: #0d9488;
+    margin-bottom: 0px;
+    line-height: 1;
+  }
+  
+  .title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 16px;
+    margin-bottom: 8px;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+    color: #64748b;
+    margin-bottom: 24px;
+    max-width: 400px;
+  }
+  
+  .homeButton {
+    background-color: #0d9488;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.2s;
+  }
+  
+  .homeButton:hover {
+    background-color: #0f766e;
+  }
