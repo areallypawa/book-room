@@ -1,0 +1,634 @@
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { api } from "../../src/api/axios";
+import type { Room, Office } from "../../src/types/index";
+import styles from "./RoomsPage.module.css";
+
+const fetchOffices = async (): Promise<Office[]> => {
+  const { data } = await api.get("/offices");
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.items)) return data.items;
+  return [];
+};
+
+// Обновляем функцию запроса комнат с учетом всех параметров фильтрации
+const fetchRooms = async (
+  officeId: string, 
+  date: Date, 
+  time: string, 
+  duration: number, 
+  capacity: number
+): Promise<Room[]> => {
+  // Форматируем дату в строку YYYY-MM-DD для бэкенда
+  const formattedDate = date.toISOString().split('T')[0];
+
+  const { data } = await api.get("/rooms", { 
+    params: { 
+      officeId,
+      date: formattedDate,
+      time,
+      duration,
+      capacity
+    } 
+  });
+  
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.items)) return data.items;
+  return [];
+};
+
+export const RoomsPage = () => {
+  const [selectedOfficeId, setSelectedOfficeId] = useState<string | null>(null);
+
+  const [capacityOpen, setCapacityOpen] = useState(false);
+  const [capacity, setCapacity] = useState(4);
+  const [durationOpen, setDurationOpen] = useState(false);
+  const [duration, setDuration] = useState(60);
+
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentMonthDate, setCurrentMonthDate] = useState<Date>(new Date());
+
+  const [timeValue, setTimeValue] = useState("15:00");
+
+  const capacityOptions = [2, 4, 6, 8, 10, 12];
+  const durationOptions = [
+    { label: "15 мин", value: 15 },
+    { label: "30 мин", value: 30 },
+    { label: "45 мин", value: 45 },
+    { label: "1 час", value: 60 },
+    { label: "1 ч 15 мин", value: 75 },
+    { label: "1 ч 30 мин", value: 90 },
+    { label: "2 часа", value: 120 },
+  ];
+
+  const { data: offices } = useQuery({
+    queryKey: ["offices"],
+    queryFn: fetchOffices,
+  });
+
+  useEffect(() => {
+    if (offices && offices.length > 0 && !selectedOfficeId) {
+      setSelectedOfficeId(offices[0].id);
+    }
+  }, [offices, selectedOfficeId]);
+
+  // React Query теперь автоматически перезапрашивает комнаты при изменении любого фильтра!
+  const { data: rooms, isLoading: isRoomsLoading, isError, refetch } = useQuery({
+    queryKey: ["rooms", selectedOfficeId, selectedDate, timeValue, duration, capacity],
+    queryFn: () => fetchRooms(selectedOfficeId!, selectedDate, timeValue, duration, capacity),
+    enabled: !!selectedOfficeId,
+  });
+  const currentOffice = offices?.find((o) => o.id === selectedOfficeId) as any;
+  const currentTime = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const formatDateLabel = (date: Date) => {
+    const day = date.getDate();
+    const months = [
+      "января",
+      "февраля",
+      "марта",
+      "апреля",
+      "мая",
+      "июня",
+      "июля",
+      "августа",
+      "сентября",
+      "октября",
+      "ноября",
+      "декабря",
+    ];
+    const monthName = months[date.getMonth()];
+    const capitalizedMonth =
+      monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    const weekdays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+    const weekdayName = weekdays[date.getDay()];
+    return `${day} ${capitalizedMonth}, ${weekdayName}`;
+  };
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 4) val = val.slice(0, 4);
+
+    if (val.length >= 2) {
+      let hours = parseInt(val.slice(0, 2), 10);
+      if (hours > 23) hours = 23;
+      const formattedHours = String(hours).padStart(2, "0");
+
+      let minutes = val.slice(2);
+      if (minutes.length >= 2) {
+        let minNum = parseInt(minutes, 10);
+        if (minNum > 59) minNum = 59;
+        minutes = String(minNum).padStart(2, "0");
+      }
+
+      val = formattedHours + (minutes ? ":" + minutes : "");
+    }
+
+    setTimeValue(val);
+  };
+  const renderCalendarDays = () => {
+    const year = currentMonthDate.getFullYear();
+    const month = currentMonthDate.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const adjustedFirstDay = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    const days = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 30);
+
+    for (let i = 0; i < adjustedFirstDay; i++) {
+      days.push(
+        <div
+          key={`empty-${i}`}
+          className={`${styles.dayCell} ${styles.dayMuted}`}
+        ></div>
+      );
+    }
+
+    for (let d = 1; d <= totalDays; d++) {
+      const date = new Date(year, month, d);
+      date.setHours(0, 0, 0, 0);
+
+      const isSelected = selectedDate.toDateString() === date.toDateString();
+      const isDisabled = date < today || date > maxDate;
+
+      days.push(
+        <div
+          key={d}
+          className={`${styles.dayCell} ${
+            isSelected ? styles.daySelected : ""
+          } ${isDisabled ? styles.dayDisabled : ""}`}
+          onClick={() => {
+            if (!isDisabled) {
+              setSelectedDate(date);
+              setCalendarOpen(false);
+            }
+          }}
+        >
+          {d}
+        </div>
+      );
+    }
+    return days;
+  };
+
+  const monthNames = [
+    "Январь",
+    "Февраль",
+    "Март",
+    "Апрель",
+    "Май",
+    "Июнь",
+    "Июль",
+    "Август",
+    "Сентябрь",
+    "Октябрь",
+    "Ноябрь",
+    "Декабрь",
+  ];
+
+  return (
+    <div className={styles.pageContainer}>
+      <div className={styles.officeHeader}>
+        <select
+          className={styles.officeSelect}
+          value={selectedOfficeId || ""}
+          onChange={(e) => setSelectedOfficeId(e.target.value)}
+        >
+          {offices?.map((office) => (
+            <option key={office.id} value={office.id}>
+              {office.name}
+            </option>
+          ))}
+        </select>
+        <p className={styles.officeSubtitle}>
+          {currentOffice?.address
+            ? currentOffice.address.replace(/^[^,]+,\s*/, "")
+            : "Адрес загружается..."}{" "}
+          <svg width="4" height="7" viewBox="0 0 4 4" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="2" cy="1" r="2" fill="#94A3B8"/>
+</svg>
+   Местное время: {currentTime} {currentOffice?.timezone ? "MSK" : ""}
+        </p>
+      </div>
+
+      <div className={styles.filtersSection}>
+        <div className={styles.filtersRow}>
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Дата</label>
+            <div className={styles.dropdownContainer}>
+              <button
+                className={styles.dropdownButton}
+                onClick={() => {
+                  setCalendarOpen(!calendarOpen);
+                  setDurationOpen(false);
+                  setCapacityOpen(false);
+                }}
+              >
+                <span
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <svg
+                    width="14"
+                    height="16"
+                    viewBox="0 0 14 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M4.33333 1V3.66688M9.66667 1V3.66688M1 6.33376H13M2.33333 2.33344H11.6667C12.403 2.33344 13 2.93044 13 3.66688V13.001C13 13.7374 12.403 14.3344 11.6667 14.3344H2.33333C1.59695 14.3344 1 13.7374 1 13.001V3.66688C1 2.93044 1.59695 2.33344 2.33333 2.33344Z"
+                      stroke="#475569"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  {formatDateLabel(selectedDate)}
+                </span>
+              </button>
+
+              {calendarOpen && (
+                <div className={styles.calendarPopup}>
+                  <div className={styles.calendarHeader}>
+                    <button
+                      className={styles.calendarNavBtn}
+                      onClick={() =>
+                        setCurrentMonthDate(
+                          new Date(
+                            currentMonthDate.setMonth(
+                              currentMonthDate.getMonth() - 1
+                            )
+                          )
+                        )
+                      }
+                    >
+                      &lt;
+                    </button>
+                    <span>
+                      {monthNames[currentMonthDate.getMonth()]}{" "}
+                      {currentMonthDate.getFullYear()}
+                    </span>
+                    <button
+                      className={styles.calendarNavBtn}
+                      onClick={() =>
+                        setCurrentMonthDate(
+                          new Date(
+                            currentMonthDate.setMonth(
+                              currentMonthDate.getMonth() + 1
+                            )
+                          )
+                        )
+                      }
+                    >
+                      &gt;
+                    </button>
+                  </div>
+                  <div className={styles.weekdaysGrid}>
+                    <div>Пн</div>
+                    <div>Вт</div>
+                    <div>Ср</div>
+                    <div>Чт</div>
+                    <div>Пт</div>
+                    <div>Сб</div>
+                    <div>Вс</div>
+                  </div>
+                  <div className={styles.daysGrid}>{renderCalendarDays()}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Время начала</label>
+            <div style={{ position: "relative" }}>
+              <span style={{ position: "absolute", left: "12px", top: "10px" }}>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <g clip-path="url(#clip0_20_31134)">
+                    <path
+                      d="M8.00021 3.99989V8.00021L10.6671 9.33365M14.6674 8.00021C14.6674 11.6824 11.6824 14.6674 8.00021 14.6674C4.31801 14.6674 1.33301 11.6824 1.33301 8.00021C1.33301 4.31801 4.31801 1.33301 8.00021 1.33301C11.6824 1.33301 14.6674 4.31801 14.6674 8.00021Z"
+                      stroke="#475569"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_20_31134">
+                      <rect width="16" height="16" fill="white" />
+                    </clipPath>
+                  </defs>
+                </svg>
+              </span>
+              <input
+                type="text"
+                className={styles.filterInput}
+                style={{ paddingLeft: "38px" }}
+                value={timeValue}
+                onChange={handleTimeChange}
+                placeholder="--:--"
+                maxLength={5}
+              />
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Длительность</label>
+            <div className={styles.dropdownContainer}>
+              <button
+                className={styles.dropdownButton}
+                onClick={() => {
+                  setDurationOpen(!durationOpen);
+                  setCalendarOpen(false);
+                  setCapacityOpen(false);
+                }}
+              >
+                <span>
+                  {durationOptions.find((o) => o.value === duration)?.label}
+                </span>
+                <span>
+                  <svg
+                    width="10"
+                    height="7"
+                    viewBox="0 0 10 7"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M1 1L5 5L9 1"
+                      stroke="#475569"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+              </button>
+              {durationOpen && (
+                <div className={styles.dropdownMenu}>
+                  {durationOptions.map((opt) => (
+                    <div
+                      key={opt.value}
+                      className={`${styles.dropdownItem} ${
+                        duration === opt.value ? styles.dropdownItemActive : ""
+                      }`}
+                      onClick={() => {
+                        setDuration(opt.value);
+                        setDurationOpen(false);
+                      }}
+                    >
+                      {opt.label}{" "}
+                      {duration === opt.value && (
+                        <span>
+                          <svg
+                            width="14"
+                            height="11"
+                            viewBox="0 0 14 11"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M0.75 5.89286L4.35 9.75L12.75 0.75"
+                              stroke="#475569"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Вместимость</label>
+            <div className={styles.dropdownContainer}>
+              <button
+                className={styles.dropdownButton}
+                onClick={() => {
+                  setCapacityOpen(!capacityOpen);
+                  setCalendarOpen(false);
+                  setDurationOpen(false);
+                }}
+              >
+                <span
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <svg
+                    width="16"
+                    height="14"
+                    viewBox="0 0 16 14"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M10.3341 13V11.6667C10.3341 10.9594 10.0531 10.2811 9.55297 9.78105C9.05283 9.28095 8.3745 9 7.6672 9H3.66688C2.95958 9 2.28125 9.28095 1.78111 9.78105C1.28097 10.2811 1 10.9594 1 11.6667V13M10.3341 1.08529C10.906 1.23353 11.4124 1.56746 11.774 2.03466C12.1355 2.50186 12.3317 3.07588 12.3317 3.66662C12.3317 4.25736 12.1355 4.83138 11.774 5.29858C11.4124 5.76578 10.906 6.09971 10.3341 6.24795M14.3344 12.9999V11.6666C14.334 11.0757 14.1373 10.5018 13.7753 10.0348C13.4132 9.56783 12.9064 9.2343 12.3342 9.08659M8.33392 3.66667C8.33392 5.13943 7.13992 6.33333 5.66704 6.33333C4.19416 6.33333 3.00016 5.13943 3.00016 3.66667C3.00016 2.19391 4.19416 1 5.66704 1C7.13992 1 8.33392 2.19391 8.33392 3.66667Z"
+                      stroke="#475569"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  Мин. {capacity} чел.
+                </span>
+                <span>
+                  <svg
+                    width="10"
+                    height="7"
+                    viewBox="0 0 10 7"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M1 1L5 5L9 1"
+                      stroke="#475569"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+              </button>
+              {capacityOpen && (
+                <div className={styles.dropdownMenu}>
+                  {capacityOptions.map((opt) => (
+                    <div
+                      key={opt}
+                      className={`${styles.dropdownItem} ${
+                        capacity === opt ? styles.dropdownItemActive : ""
+                      }`}
+                      onClick={() => {
+                        setCapacity(opt);
+                        setCapacityOpen(false);
+                      }}
+                    >
+                      {opt} чел.{" "}
+                      {capacity === opt && (
+                        <span>
+                          <svg
+                            width="14"
+                            height="11"
+                            viewBox="0 0 14 11"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M0.75 5.89286L4.35 9.75L12.75 0.75"
+                              stroke="#475569"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.mainInfo}>
+        <h2 className={styles.sectionTitle}>
+          {isRoomsLoading ? "Загрузка переговорных..." : "Доступные переговорные в этом офисе"}
+        </h2>
+
+        {isRoomsLoading ? (
+          <div className={styles.grid}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className={`${styles.card} ${styles.skeletonCard}`}>
+                <div className={styles.skeletonLineShort} />
+                <div className={styles.skeletonLineLong} />
+                <div className={styles.skeletonBlock} />
+                <div className={styles.skeletonButton} />
+              </div>
+            ))}
+          </div>
+        ) : isError ? (
+          /* Экран ошибки загрузки с твоей точной иконкой из ТЗ */
+          <div className={styles.errorContainer}>
+            <svg className={styles.errorIcon} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="120" height="120" rx="60" fill="#FEE2E2"/>
+              <path d="M60 52.9982V62.3315M60 71.6649H60.0233M82.7043 73.9987L64.0376 41.3321C63.6306 40.6139 63.0403 40.0165 62.3271 39.6009C61.6138 39.1853 60.8031 38.9663 59.9776 38.9663C59.1521 38.9663 58.3414 39.1853 57.6281 39.6009C56.9149 40.165 56.3246 40.6139 55.9176 41.3321L37.2509 73.9987C36.8395 74.7112 36.6238 75.5198 36.6256 76.3426C36.6274 77.1653 36.8467 77.973 37.2613 78.6837C37.6759 79.3943 38.2709 79.9828 38.9862 80.3893C39.7015 80.7959 40.5116 81.0061 41.3343 80.9987H78.6676C79.4864 80.9979 80.2905 80.7817 80.9993 80.3717C81.708 79.9618 82.2964 79.3726 82.7055 78.6633C83.1145 77.954 83.3297 77.1496 83.3295 76.3309C83.3293 75.5121 83.1136 74.7078 82.7043 73.9987Z" stroke="#B91C1C" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            
+            <h3 className={styles.errorTitle}>Не удалось загрузить данные</h3>
+            <p className={styles.errorSubtitle}>Произошла ошибка при загрузке списка переговорных</p>
+            
+            <button className={styles.retryButton} onClick={() => refetch()}>
+              Попробовать снова
+            </button>
+          </div>
+        ) : (() => {
+        // Фильтруем комнаты
+        const filteredRooms = rooms?.filter((room) => room.capacity >= capacity) || [];
+
+        if (filteredRooms.length === 0) {
+          return (
+            <div className={styles.emptyContainer}>
+              {/* Твоя иконка из ТЗ */}
+              <svg className={styles.emptyIcon} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="120" height="120" rx="60" fill="#E2E8F0"/>
+                <path d="M63.5 51.8333L51.8333 63.5M51.8333 51.8333L63.5 63.5M81.0005 81.0005L70.9671 70.9671M76.3333 57.6667C76.3333 67.976 67.976 76.3333 57.6667 76.3333C47.3574 76.3333 39 67.976 39 57.6667C39 47.3574 47.3574 39 57.6667 39C67.976 39 76.3333 47.3574 76.3333 57.6667Z" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              
+              <h3 className={styles.emptyTitle}>Нет доступных переговорных</h3>
+              <p className={styles.emptySubtitle}>Попробуйте изменить параметры фильтрации или выбрать другой офис</p>
+              
+              <button 
+                className={styles.resetButton}
+                onClick={() => {
+                  setCapacity(4);
+                  setDuration(60);
+                }}
+              >
+                Сбросить фильтры
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <div className={styles.grid}>
+            {filteredRooms.map((room) => {
+              const isAvailable = room.id !== "room-everest";
+
+              return (
+                <div key={room.id} className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <h3 className={styles.roomName}>{room.name}</h3>
+                    <p className={styles.roomFloor}>{room.floor} этаж</p>
+                  </div>
+
+                  <div className={styles.cardDetails}>
+                    <div>
+                      <svg style={{ marginRight: '8px' }} width="16" height="14" viewBox="0 0 16 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10.3341 13V11.6667C10.3341 10.9594 10.0531 10.2811 9.55297 9.78105C9.05283 9.28095 8.3745 9 7.6672 9H3.66688C2.95958 9 2.28125 9.28095 1.78111 9.78105C1.28097 10.2811 1 10.9594 1 11.6667V13M10.3341 1.08529C10.906 1.23353 11.4124 1.56746 11.774 2.03466C12.1355 2.50186 12.3317 3.07588 12.3317 3.66662C12.3317 4.25736 12.1355 4.83138 11.774 5.29858C11.4124 5.76578 10.906 6.09971 10.3341 6.24795M14.3344 12.9999V11.6666C14.334 11.0757 14.1373 10.5018 13.7753 10.0348C13.4132 9.56783 12.9064 9.2343 12.3342 9.08659M8.33392 3.66667C8.33392 5.13943 7.13992 6.33333 5.66704 6.33333C4.19416 6.33333 3.00016 5.13943 3.00016 3.66667C3.00016 2.19391 4.19416 1 5.66704 1C7.13992 1 8.33392 2.19391 8.33392 3.66667Z" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      Вместимость: до {room.capacity} человек
+                    </div>
+                    <div>
+                      <svg style={{ marginRight: '5px' }} width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7.6672 3.66688V7.6672L10.3341 9.00064M14.3344 7.6672C14.3344 11.3494 11.3494 14.3344 7.6672 14.3344C3.98501 14.3344 1 11.3494 1 7.6672C1 3.98501 3.98501 1 7.6672 1C11.3494 1 14.3344 3.98501 14.3344 7.6672Z" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>{" "}
+                      {isAvailable ? "Свободна весь день" : "Занята до 15:30"}
+                    </div>
+                  </div>
+
+                  <div className={`${styles.statusBanner} ${isAvailable ? styles.statusAvailable : styles.statusUnavailable}`}>
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                      {isAvailable ? (
+                        <>
+                          <svg width="6" height="6" viewBox="0 0 6 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="3" cy="3" r="3" fill="#0D9488" />
+                          </svg>
+                          Доступно на выбранное время
+                        </>
+                      ) : (
+                        <>
+                          <svg width="6" height="6" viewBox="0 0 6 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="3" cy="3" r="3" fill="#94A3B8" />
+                          </svg>
+                          Недоступно на выбранное время
+                        </>
+                      )}
+                    </span>
+                  </div>
+
+                  <div className={styles.cardActions}>
+                    <Link to={`/rooms/${room.id}`} className={styles.btnDetails}>
+                      Подробнее
+                    </Link>
+                    <button className={`${styles.btnBook} ${!isAvailable ? styles.btnBookDisabled : ""}`} disabled={!isAvailable}>
+                      Забронировать
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      </div>
+
+
+    </div>
+  );
+};
