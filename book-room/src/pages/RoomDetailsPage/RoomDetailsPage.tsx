@@ -113,7 +113,7 @@ export const RoomDetailsPage = () => {
         />
         
         <RoomSchedule 
-          roomId={roomId!}
+          room={room!}
           selectedDate={selectedDate} 
           onDateChange={setSelectedDate} 
         />

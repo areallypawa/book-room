@@ -14,7 +14,6 @@ export const router = createBrowserRouter([
       { path: 'rooms', element: <RoomsPage /> },
       { path: 'rooms/:roomId', element: <RoomDetailsPage /> },
       { path: 'bookings', element: <BookingsPage /> },
-      // Универсальный перехватчик: выведет 404 внутри общего каркаса с шапкой
       { path: '*', element: <NotFoundPage /> },
     ],
   },

@@ -39,7 +39,6 @@ export const RoomInfo = ({ room, officeName }: RoomInfoProps) => {
           Вместимость: до {room.capacity} человек
         </div>
 
-        {/* Остальные особенности */}
         {room.features?.map((feature) => (
           <div key={feature.code} className={styles.featureItem}>
             {featureIcons[feature.code]}

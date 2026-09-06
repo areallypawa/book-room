@@ -689,8 +689,8 @@ export const RoomsPage = () => {
                     key={room.id}
                     room={room}
                     selectedDate={selectedDate}
-                    timeValue={timeValue}
-                    duration={duration}
+                    timeValue={timeValue} 
+                    duration={duration} 
                   />
                 ))}
               </div>
