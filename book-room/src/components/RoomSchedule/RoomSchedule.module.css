@@ -63,9 +63,9 @@
 }
 
 .timeLabel {
-  font-size: 0.85rem;
+  font-size: 13px;
   color: #94a3b8;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 /* Слоты бронирования на таймлайне */
@@ -74,23 +74,31 @@
   left: 70px;
   right: 0;
   border-radius: 8px;
-  padding: 10px 16px;
+
+  padding: 0 16px; 
+  
   font-size: 0.9rem;
   font-weight: 500;
+
   display: flex;
   align-items: center;
+  
+  /* ВАЖНО для 15-30 минутных слотов */
+  overflow: hidden;        
+  white-space: nowrap;    
+  text-overflow: ellipsis;  
 }
 
 .slotGreen {
-  background-color: #ccfbf1;
-  color: #115e59;
-  border: 1px solid #99f6e4;
+  background-color: #CCFBF1;
+  color: #0F766E;
+  border: 1px solid #0D9488;
 }
 
 .slotGray {
-  background-color: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  background-color: #F1F5F9;
+  color: #0F172A;
+  border: 1px solid #E2E8F0;
 }
 
 /* Кнопка бронирования внизу */
@@ -100,12 +108,12 @@
 }
 
 .bookButton {
-  background-color: #0d9488;
+  background-color: #0D9488;
   color: #ffffff;
   border: none;
   border-radius: 8px;
   padding: 12px 24px;
-  font-size: 0.95rem;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -118,5 +126,52 @@
 .scheduleTitleWrapper {
   display: flex;
   flex-direction: column;
-  gap: 4px; /* Небольшой отступ между заголовком и датой */
+  gap: 4px; 
+}
+
+/* --- Экран ошибки --- */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 400px; 
+  padding: 40px 20px;
+}
+
+.errorIcon {
+  margin-bottom: 24px;
+}
+
+.errorTitle {
+  font-size: 20px;
+  font-weight: 750;
+  color: #0f172a;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.errorSubtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 24px;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.retryButton {
+  background-color: #0d9488;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.retryButton:hover {
+  background-color: #0f766e;
 }

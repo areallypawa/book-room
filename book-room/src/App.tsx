@@ -20,7 +20,7 @@ export const App = () => {
 
   return (
     <div className={styles.layout}>
-      {/* Глобальный желтый баннер сверху на ВСЕХ вкладках при потере сети */}
+      {/* Глобальный желтый баннер сверху */}
       {isOffline && (
         <div className={styles.offlineBanner}>
           <span>

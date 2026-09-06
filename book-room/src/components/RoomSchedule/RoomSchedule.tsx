@@ -1,13 +1,48 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../api/axios"; 
 import { Calendar } from "../../components/Calendar/Calendar";
-import styles from "./RoomShedule.module.css";
+import styles from "./RoomSchedule.module.css"; 
+
+interface Booking {
+  id: string;
+  roomId: string;
+  userId: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+}
 
 interface RoomScheduleProps {
+  roomId: string; 
   selectedDate: Date;
   onDateChange: (date: Date) => void;
 }
 
-export const RoomSchedule = ({ selectedDate, onDateChange }: RoomScheduleProps) => {
+const fetchRoomBookings = async (roomId: string, date: Date): Promise<Booking[]> => {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const { data } = await api.get(`/rooms/${roomId}/bookings`, {
+    params: {
+      from: startOfDay.toISOString(),
+      to: endOfDay.toISOString(),
+    },
+  });
+
+  return Array.isArray(data) ? data : data.items || [];
+};
+
+
+export const RoomSchedule = ({ roomId, selectedDate, onDateChange }: RoomScheduleProps) => {
+  const formattedDate = [
+    selectedDate.getFullYear(),
+    String(selectedDate.getMonth() + 1).padStart(2, "0"),
+    String(selectedDate.getDate()).padStart(2, "0"),
+  ].join("-");
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   const hours = [
@@ -15,7 +50,12 @@ export const RoomSchedule = ({ selectedDate, onDateChange }: RoomScheduleProps) 
     "15:00", "16:00", "17:00", "18:00", "19:00", "20:00",
   ];
 
-  // Форматирование даты тоже переехало сюда
+  const { data: bookings = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["room-bookings", roomId, formattedDate],
+    queryFn: () => fetchRoomBookings(roomId, selectedDate),
+    enabled: !!roomId,
+  });
+
   const formatDateLabel = (date: Date) => {
     const day = date.getDate();
     const months = [
@@ -29,6 +69,56 @@ export const RoomSchedule = ({ selectedDate, onDateChange }: RoomScheduleProps) 
     return `${day} ${capitalizedMonth}, ${weekdayName}`;
   };
 
+  const calculateBookingStyle = (startsAt: string, endsAt: string) => {
+    const startDate = new Date(startsAt);
+    const endDate = new Date(endsAt);
+
+    let startHour = startDate.getUTCHours() + startDate.getUTCMinutes() / 60;
+    let endHour = endDate.getUTCHours() + endDate.getUTCMinutes() / 60;
+
+    if (endHour === 0 && endDate > startDate) {
+      endHour = 24;
+    }
+
+    const baseHour = 9;
+    const hourHeight = 48; 
+
+    startHour = Math.max(baseHour, startHour);
+    endHour = Math.min(21, endHour);
+
+    const topOffset = (startHour - baseHour + 1) * hourHeight;
+    const durationHours = endHour - startHour;
+    
+    if (durationHours <= 0) return { display: "none" };
+
+    const height = durationHours * hourHeight;
+
+    return {
+      top: `${topOffset + 2}px`,
+      height: `${height}px`,
+    };
+  };
+
+  // Если произошла ошибка запроса, рендерим блок ошибки
+  if (isError) {
+    return (
+      <div className={styles.scheduleCard}>
+        <div className={styles.errorContainer}>
+          <svg className={styles.errorIcon} width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="120" height="120" rx="60" fill="#FEE2E2"/>
+            <path d="M59.9998 52.9982V62.3315M59.9998 71.6649H60.0232M82.7041 73.9987L64.0375 41.3321C63.6305 40.6139 63.0402 40.0165 62.327 39.6009C61.6137 39.1853 60.803 38.9663 59.9775 38.9663C59.152 38.9663 58.3412 39.1853 57.628 39.6009C56.9147 40.0165 56.3245 40.6139 55.9175 41.3321L37.2508 73.9987C36.8394 74.7112 36.6237 75.5198 36.6255 76.3426C36.6273 77.1653 36.8466 77.973 37.2612 78.6837C37.6757 79.3943 38.2708 79.9828 38.9861 80.3893C39.7014 80.7959 40.5114 81.0061 41.3341 80.9987H78.6675C79.4862 80.9979 80.2904 80.7817 80.9991 80.3717C81.7079 79.9618 82.2963 79.3726 82.7053 78.6633C83.1144 77.954 83.3296 77.1496 83.3294 76.3309C83.3291 75.5121 83.1135 74.7078 82.7041 73.9987Z" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <h3 className={styles.errorTitle}>Не удалось загрузить расписание</h3>
+          <p className={styles.errorSubtitle}>Произошла ошибка при загрузке расписания переговорной</p>
+          <button className={styles.retryButton} onClick={() => refetch()}>
+            Попробовать снова
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Обычный рендер при успешной загрузке
   return (
     <div className={styles.scheduleCard}>
       <div className={styles.scheduleHeader}>
@@ -53,8 +143,8 @@ export const RoomSchedule = ({ selectedDate, onDateChange }: RoomScheduleProps) 
               align="right"
               selectedDate={selectedDate}
               onSelectDate={(newDate) => {
-                onDateChange(newDate); 
-                setCalendarOpen(false); 
+                onDateChange(new Date(newDate));
+                setCalendarOpen(false);
               }}
             />
           )}
@@ -68,13 +158,27 @@ export const RoomSchedule = ({ selectedDate, onDateChange }: RoomScheduleProps) 
           </div>
         ))}
 
-        <div className={`${styles.bookingSlot} ${styles.slotGreen}`} style={{ top: "100px", height: "44px" }}>
-          Daily Sync / Команда разработки
-        </div>
+        {isLoading ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>Загрузка расписания...</div>
+        ) : (
+          bookings.map((booking) => {
+            const style = calculateBookingStyle(booking.startsAt, booking.endsAt);
+            
+            if (style.display === "none") return null;
 
-        <div className={`${styles.bookingSlot} ${styles.slotGray}`} style={{ top: "288px", height: "44px" }}>
-          Занято
-        </div>
+            const isMyBooking = booking.userId === "user-konstantin";
+            
+            return (
+              <div
+                key={booking.id}
+                className={`${styles.bookingSlot} ${isMyBooking ? styles.slotGreen : styles.slotGray}`}
+                style={style}
+              >
+                {isMyBooking ? booking.title : "Занято"}
+              </div>
+            );
+          })
+        )}
       </div>
 
       <div className={styles.actionsFooter}>

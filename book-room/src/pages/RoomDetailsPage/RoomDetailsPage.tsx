@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/axios";
+import { useState } from "react";
 import type { Room } from "../../types/index";
 import styles from "./RoomDetailsPage.module.css";
-
+import { NotFoundPage } from "../NotFoundPage/NotFoundPage";
 import { RoomInfo } from "../../components/RoomInfo/RoomInfo";
 import { RoomSchedule } from "../../components/RoomSchedule/RoomSchedule";
 
@@ -22,12 +22,11 @@ export const RoomDetailsPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const location = useLocation();
 
-  const initialDate = location.state?.selectedDate
-    ? new Date(location.state.selectedDate)
-    : new Date();
-
-  // оставляем дату здесь, она потом понадобится тебе для отправки на бэкенд при бронировании
-  const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    return location.state?.selectedDate
+      ? new Date(location.state.selectedDate)
+      : new Date();
+  });
 
   const {
     data: room,
@@ -39,10 +38,10 @@ export const RoomDetailsPage = () => {
     enabled: !!roomId,
   });
 
+  
   if (isLoading) {
     return (
       <div className={styles.pageContainer}>
-        {/* Скелет хлебных крошек */}
         <div className={`${styles.skeleton} ${styles.skeletonLine}`} style={{ width: "250px", height: "20px", marginBottom: "24px" }}></div>
 
         <div className={styles.contentGrid}>
@@ -82,11 +81,7 @@ export const RoomDetailsPage = () => {
   }
 
   if (isError || !room) {
-    return (
-      <div style={{ padding: "40px", textAlign: "center", color: "#b91c1c" }}>
-        Не удалось загрузить данные переговорной.
-      </div>
-    );
+    return <NotFoundPage />;
   }
 
   return (
@@ -111,7 +106,6 @@ export const RoomDetailsPage = () => {
         </span>
       </div>
 
-      {/* ВОТ ОНО - МАГИЯ КОМПОНЕНТОВ! */}
       <div className={styles.contentGrid}>
         <RoomInfo 
           room={room} 
@@ -119,6 +113,7 @@ export const RoomDetailsPage = () => {
         />
         
         <RoomSchedule 
+          roomId={roomId!}
           selectedDate={selectedDate} 
           onDateChange={setSelectedDate} 
         />

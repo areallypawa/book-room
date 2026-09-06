@@ -1,9 +1,53 @@
+
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
   }
   
-  .skeleton-pulse {
-    animation: pulse 1.5s infinite ease-in-out;
-    pointer-events: none;
+  /* Базовый класс скелетона */
+  .skeleton {
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    background-color: #E2E8F0;
+    border-radius: 8px;
+  }
+  
+  /* Карточка-скелетон для комнат */
+  .skeletonCard {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .skeletonLineShort {
+    height: 18px;
+    width: 40%;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+  }
+  
+  .skeletonLineLong {
+    height: 24px;
+    width: 75%;
+    background-color: #e2e8f0;
+    border-radius: 6px;
+  }
+  
+  .skeletonBlock {
+    height: 60px;
+    width: 100%;
+    background-color: #f1f5f9;
+    border-radius: 8px;
+  }
+  
+  .skeletonButton {
+    height: 40px;
+    width: 100%;
+    background-color: #e2e8f0;
+    border-radius: 8px;
+    margin-top: 8px;
   }

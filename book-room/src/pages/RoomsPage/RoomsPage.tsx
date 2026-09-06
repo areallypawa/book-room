@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-// import { Link } from "react-router-dom";
 import { api } from "../../api/axios";
 import type { Room, Office } from "../../types/index";
 import styles from "./RoomsPage.module.css";
@@ -14,7 +13,6 @@ const fetchOffices = async (): Promise<Office[]> => {
   return [];
 };
 
-// Обновляем функцию запроса комнат с учетом всех параметров фильтрации
 const fetchRooms = async (
   officeId: string,
   date: Date,
@@ -22,7 +20,6 @@ const fetchRooms = async (
   duration: number,
   capacity: number
 ): Promise<Room[]> => {
-  // Форматируем дату в строку YYYY-MM-DD для бэкенда
   const formattedDate = date.toISOString().split("T")[0];
 
   const { data } = await api.get("/rooms", {
@@ -65,7 +62,12 @@ export const RoomsPage = () => {
     { label: "2 часа", value: 120 },
   ];
 
-  const { data: offices } = useQuery({
+  const { 
+    data: offices, 
+    isLoading: isOfficesLoading, 
+    isError: isOfficesError, 
+    refetch: refetchOffices 
+  } = useQuery({
     queryKey: ["offices"],
     queryFn: fetchOffices,
   });
@@ -76,7 +78,8 @@ export const RoomsPage = () => {
     }
   }, [offices, selectedOfficeId]);
 
-  // React Query теперь автоматически перезапрашивает комнаты при изменении любого фильтра!
+  const formattedDate = selectedDate.toISOString().split("T")[0];
+
   const {
     data: rooms,
     isLoading: isRoomsLoading,
@@ -86,7 +89,7 @@ export const RoomsPage = () => {
     queryKey: [
       "rooms",
       selectedOfficeId,
-      selectedDate,
+      formattedDate, 
       timeValue,
       duration,
       capacity,
@@ -101,6 +104,7 @@ export const RoomsPage = () => {
       ),
     enabled: !!selectedOfficeId,
   });
+
   const currentOffice = offices?.find((o) => o.id === selectedOfficeId) as any;
   const currentTime = new Date().toLocaleTimeString([], {
     hour: "2-digit",
@@ -110,22 +114,11 @@ export const RoomsPage = () => {
   const formatDateLabel = (date: Date) => {
     const day = date.getDate();
     const months = [
-      "января",
-      "февраля",
-      "марта",
-      "апреля",
-      "мая",
-      "июня",
-      "июля",
-      "августа",
-      "сентября",
-      "октября",
-      "ноября",
-      "декабря",
+      "января", "февраля", "марта", "апреля", "мая", "июня",
+      "июля", "августа", "сентября", "октября", "ноября", "декабря",
     ];
     const monthName = months[date.getMonth()];
-    const capitalizedMonth =
-      monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
     const weekdays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
     const weekdayName = weekdays[date.getDay()];
     return `${day} ${capitalizedMonth}, ${weekdayName}`;
@@ -153,6 +146,24 @@ export const RoomsPage = () => {
     setTimeValue(val);
   };
 
+  if (isOfficesError) {
+    return (
+      <div className={styles.pageContainer}>
+        <div className={styles.errorContainer} style={{ minHeight: "60vh" }}>
+          <svg className={styles.errorIcon} width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="120" height="120" rx="60" fill="#CCFBF1"/>
+            <path d="M60 55.9998H60.02M60 64.0005H60.02M60 47.9992H60.02M67.9992 55.9998H68.0192M67.9992 64.0005H68.0192M67.9992 47.9992H68.0192M52.0008 55.9998H52.0208M52.0008 64.0005H52.0208M52.0008 47.9992H52.0208M54.0006 80.0017V74.0013C54.0006 73.4708 54.2113 72.962 54.5863 72.5869C54.9614 72.2118 55.47 72.0011 56.0004 72.0011H63.9996C64.53 72.0011 65.0386 72.2118 65.4137 72.5869C65.7887 72.962 65.9994 73.4708 65.9994 74.0013V80.0017M48.0012 39.9985H71.9988C74.2077 39.9985 75.9984 41.7895 75.9984 43.9989V76.0014C75.9984 78.2107 74.2077 80.0017 71.9988 80.0017H48.0012C45.7923 80.0017 44.0016 78.2107 44.0016 76.0014V43.9989C44.0016 41.7895 45.7923 39.9985 48.0012 39.9985Z" stroke="#0D9488" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <h3 className={styles.errorTitle}>Не удалось загрузить офисы</h3>
+          <p className={styles.errorSubtitle}>Сервер долго не отвечает или недоступен. Проверьте соединение.</p>
+          <button className={styles.retryButton} onClick={() => refetchOffices()}>
+            Попробовать снова
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.officeHeader}>
@@ -166,17 +177,18 @@ export const RoomsPage = () => {
             style={{
               fontSize: "18px",
               fontWeight: 700,
-              color: "#0F172A",
+              color: isOfficesLoading ? "#94a3b8" : "#0F172A",
               padding: 0,
               border: "none",
               background: "transparent",
               display: "flex",
               alignItems: "start",
               gap: "12px",
-              cursor: "pointer",
+              cursor: isOfficesLoading ? "default" : "pointer",
               justifyContent: "flex-start",
             }}
             onClick={() => {
+              if (isOfficesLoading) return; 
               setOfficeOpen(!officeOpen);
               setCalendarOpen(false);
               setDurationOpen(false);
@@ -184,7 +196,9 @@ export const RoomsPage = () => {
             }}
           >
             <span>
-              {currentOffice?.city || currentOffice?.name || "загрузка..."}
+              {isOfficesLoading
+                ? "Выберите офис"
+                : currentOffice?.city || currentOffice?.name || "Выберите офис"}
             </span>
             <span
               style={{
@@ -204,7 +218,7 @@ export const RoomsPage = () => {
               >
                 <path
                   d="M6 9L12 15L18 9"
-                  stroke="#0F172A"
+                  stroke={isOfficesLoading ? "#94a3b8" : "#0F172A"}
                   strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -213,7 +227,7 @@ export const RoomsPage = () => {
             </span>
           </button>
 
-          {officeOpen && (
+          {officeOpen && !isOfficesLoading && (
             <div
               className={styles.dropdownMenu}
               style={{ top: "100%", left: 0, zIndex: 10, width: "20%" }}
@@ -258,9 +272,13 @@ export const RoomsPage = () => {
         </div>
 
         <p className={styles.officeSubtitle}>
-          {currentOffice?.address
-            ? currentOffice.address.replace(/^[^,]+,\s*/, "")
-            : "Адрес загружается..."}{" "}
+          {isOfficesLoading ? (
+            "Адрес не выбран"
+          ) : currentOffice?.address ? (
+            currentOffice.address.replace(/^[^,]+,\s*/, "")
+          ) : (
+            "Адрес не выбран"
+          )}{" "}
           <svg
             style={{ margin: "0 6px 0 6px" }}
             width="4"
@@ -271,7 +289,7 @@ export const RoomsPage = () => {
           >
             <circle cx="2" cy="1" r="2" fill="#94A3B8" />
           </svg>
-          Местное время: {currentTime} {currentOffice?.timezone ? "MSK" : ""}
+          Местное время: {isOfficesLoading ? "--" : `${currentTime} ${currentOffice?.timezone ? "MSK" : ""}`}
         </p>
       </div>
 
@@ -301,8 +319,8 @@ export const RoomsPage = () => {
                     <path
                       d="M4.33333 1V3.66688M9.66667 1V3.66688M1 6.33376H13M2.33333 2.33344H11.6667C12.403 2.33344 13 2.93044 13 3.66688V13.001C13 13.7374 12.403 14.3344 11.6667 14.3344H2.33333C1.59695 14.3344 1 13.7374 1 13.001V3.66688C1 2.93044 1.59695 2.33344 2.33333 2.33344Z"
                       stroke="#475569"
-                      stroke-width="2"
-                      stroke-linecap="round"
+                      strokeWidth="2"
+                      strokeLinecap="round"
                     />
                   </svg>
                   {formatDateLabel(selectedDate)}
@@ -332,12 +350,12 @@ export const RoomsPage = () => {
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <g clip-path="url(#clip0_20_31134)">
+                  <g clipPath="url(#clip0_20_31134)">
                     <path
                       d="M8.00021 3.99989V8.00021L10.6671 9.33365M14.6674 8.00021C14.6674 11.6824 11.6824 14.6674 8.00021 14.6674C4.31801 14.6674 1.33301 11.6824 1.33301 8.00021C1.33301 4.31801 4.31801 1.33301 8.00021 1.33301C11.6824 1.33301 14.6674 4.31801 14.6674 8.00021Z"
                       stroke="#475569"
-                      stroke-width="2"
-                      stroke-linecap="round"
+                      strokeWidth="2"
+                      strokeLinecap="round"
                     />
                   </g>
                   <defs>
@@ -389,8 +407,8 @@ export const RoomsPage = () => {
                     <path
                       d="M1 1L5 5L9 1"
                       stroke="#475569"
-                      stroke-width="2"
-                      stroke-linecap="round"
+                      strokeWidth="2"
+                      strokeLinecap="round"
                     />
                   </svg>
                 </span>
@@ -421,9 +439,9 @@ export const RoomsPage = () => {
                             <path
                               d="M0.75 5.89286L4.35 9.75L12.75 0.75"
                               stroke="#475569"
-                              stroke-width="1.5"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
                             />
                           </svg>
                         </span>
@@ -459,8 +477,8 @@ export const RoomsPage = () => {
                     <path
                       d="M10.3341 13V11.6667C10.3341 10.9594 10.0531 10.2811 9.55297 9.78105C9.05283 9.28095 8.3745 9 7.6672 9H3.66688C2.95958 9 2.28125 9.28095 1.78111 9.78105C1.28097 10.2811 1 10.9594 1 11.6667V13M10.3341 1.08529C10.906 1.23353 11.4124 1.56746 11.774 2.03466C12.1355 2.50186 12.3317 3.07588 12.3317 3.66662C12.3317 4.25736 12.1355 4.83138 11.774 5.29858C11.4124 5.76578 10.906 6.09971 10.3341 6.24795M14.3344 12.9999V11.6666C14.334 11.0757 14.1373 10.5018 13.7753 10.0348C13.4132 9.56783 12.9064 9.2343 12.3342 9.08659M8.33392 3.66667C8.33392 5.13943 7.13992 6.33333 5.66704 6.33333C4.19416 6.33333 3.00016 5.13943 3.00016 3.66667C3.00016 2.19391 4.19416 1 5.66704 1C7.13992 1 8.33392 2.19391 8.33392 3.66667Z"
                       stroke="#475569"
-                      stroke-width="2"
-                      stroke-linecap="round"
+                      strokeWidth="2"
+                      strokeLinecap="round"
                     />
                   </svg>
                   Мин. {capacity} чел.
@@ -481,8 +499,8 @@ export const RoomsPage = () => {
                     <path
                       d="M1 1L5 5L9 1"
                       stroke="#475569"
-                      stroke-width="2"
-                      stroke-linecap="round"
+                      strokeWidth="2"
+                      strokeLinecap="round"
                     />
                   </svg>
                 </span>
@@ -513,9 +531,9 @@ export const RoomsPage = () => {
                             <path
                               d="M0.75 5.89286L4.35 9.75L12.75 0.75"
                               stroke="#475569"
-                              stroke-width="1.5"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
                             />
                           </svg>
                         </span>
@@ -531,24 +549,24 @@ export const RoomsPage = () => {
 
       <div className={styles.mainInfo}>
         <h2 className={styles.sectionTitle}>
-          {isRoomsLoading
+          {(isOfficesLoading || isRoomsLoading)
             ? "Загрузка переговорных..."
             : "Доступные переговорные в этом офисе"}
         </h2>
 
-        {isRoomsLoading ? (
+        {/* Одновременные скелетоны при загрузке */}
+        {(isOfficesLoading || isRoomsLoading) ? (
           <div className={styles.grid}>
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={`${styles.card} ${styles.skeletonCard}`}>
-                <div className={styles.skeletonLineShort} />
-                <div className={styles.skeletonLineLong} />
-                <div className={styles.skeletonBlock} />
-                <div className={styles.skeletonButton} />
+              <div key={i} className="skeletonCard">
+                <div className="skeletonLineShort" />
+                <div className="skeletonLineLong" />
+                <div className="skeletonBlock" />
+                <div className="skeletonButton" />
               </div>
             ))}
           </div>
         ) : isError ? (
-          /* Экран ошибки загрузки с твоей точной иконкой из ТЗ */
           <div className={styles.errorContainer}>
             <svg
               className={styles.errorIcon}
@@ -576,14 +594,12 @@ export const RoomsPage = () => {
           </div>
         ) : (
           (() => {
-            // Фильтруем комнаты
             const filteredRooms =
               rooms?.filter((room) => room.capacity >= capacity) || [];
 
             if (filteredRooms.length === 0) {
               return (
                 <div className={styles.emptyContainer}>
-                  {/* Твоя иконка из ТЗ */}
                   <svg
                     className={styles.emptyIcon}
                     viewBox="0 0 120 120"
