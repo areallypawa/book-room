@@ -1,0 +1,37 @@
+.infoCard {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+  }
+  
+  .roomTitle {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 6px;
+    margin-top: 0px;
+  }
+  
+  .roomSubtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  
+  .featuresList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .featureItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #334155;
+    font-weight: 400;
+  }

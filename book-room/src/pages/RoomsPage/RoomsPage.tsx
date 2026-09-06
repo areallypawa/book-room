@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { api } from "../../src/api/axios";
-import type { Room, Office } from "../../src/types/index";
+// import { Link } from "react-router-dom";
+import { api } from "../../api/axios";
+import type { Room, Office } from "../../types/index";
 import styles from "./RoomsPage.module.css";
+import { Calendar } from "../../components/Calendar/Calendar";
+import { RoomCard } from "../../components/RoomCard/RoomCard";
 
 const fetchOffices = async (): Promise<Office[]> => {
   const { data } = await api.get("/offices");
@@ -14,25 +16,25 @@ const fetchOffices = async (): Promise<Office[]> => {
 
 // Обновляем функцию запроса комнат с учетом всех параметров фильтрации
 const fetchRooms = async (
-  officeId: string, 
-  date: Date, 
-  time: string, 
-  duration: number, 
+  officeId: string,
+  date: Date,
+  time: string,
+  duration: number,
   capacity: number
 ): Promise<Room[]> => {
   // Форматируем дату в строку YYYY-MM-DD для бэкенда
-  const formattedDate = date.toISOString().split('T')[0];
+  const formattedDate = date.toISOString().split("T")[0];
 
-  const { data } = await api.get("/rooms", { 
-    params: { 
+  const { data } = await api.get("/rooms", {
+    params: {
       officeId,
       date: formattedDate,
       time,
       duration,
-      capacity
-    } 
+      capacity,
+    },
   });
-  
+
   if (Array.isArray(data)) return data;
   if (data && Array.isArray(data.items)) return data.items;
   return [];
@@ -40,6 +42,7 @@ const fetchRooms = async (
 
 export const RoomsPage = () => {
   const [selectedOfficeId, setSelectedOfficeId] = useState<string | null>(null);
+  const [officeOpen, setOfficeOpen] = useState(false);
 
   const [capacityOpen, setCapacityOpen] = useState(false);
   const [capacity, setCapacity] = useState(4);
@@ -48,7 +51,6 @@ export const RoomsPage = () => {
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [currentMonthDate, setCurrentMonthDate] = useState<Date>(new Date());
 
   const [timeValue, setTimeValue] = useState("15:00");
 
@@ -75,9 +77,28 @@ export const RoomsPage = () => {
   }, [offices, selectedOfficeId]);
 
   // React Query теперь автоматически перезапрашивает комнаты при изменении любого фильтра!
-  const { data: rooms, isLoading: isRoomsLoading, isError, refetch } = useQuery({
-    queryKey: ["rooms", selectedOfficeId, selectedDate, timeValue, duration, capacity],
-    queryFn: () => fetchRooms(selectedOfficeId!, selectedDate, timeValue, duration, capacity),
+  const {
+    data: rooms,
+    isLoading: isRoomsLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      "rooms",
+      selectedOfficeId,
+      selectedDate,
+      timeValue,
+      duration,
+      capacity,
+    ],
+    queryFn: () =>
+      fetchRooms(
+        selectedOfficeId!,
+        selectedDate,
+        timeValue,
+        duration,
+        capacity
+      ),
     enabled: !!selectedOfficeId,
   });
   const currentOffice = offices?.find((o) => o.id === selectedOfficeId) as any;
@@ -131,93 +152,126 @@ export const RoomsPage = () => {
 
     setTimeValue(val);
   };
-  const renderCalendarDays = () => {
-    const year = currentMonthDate.getFullYear();
-    const month = currentMonthDate.getMonth();
-    const firstDayIndex = new Date(year, month, 1).getDay();
-    const adjustedFirstDay = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
-    const totalDays = new Date(year, month + 1, 0).getDate();
-
-    const days = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const maxDate = new Date();
-    maxDate.setDate(today.getDate() + 30);
-
-    for (let i = 0; i < adjustedFirstDay; i++) {
-      days.push(
-        <div
-          key={`empty-${i}`}
-          className={`${styles.dayCell} ${styles.dayMuted}`}
-        ></div>
-      );
-    }
-
-    for (let d = 1; d <= totalDays; d++) {
-      const date = new Date(year, month, d);
-      date.setHours(0, 0, 0, 0);
-
-      const isSelected = selectedDate.toDateString() === date.toDateString();
-      const isDisabled = date < today || date > maxDate;
-
-      days.push(
-        <div
-          key={d}
-          className={`${styles.dayCell} ${
-            isSelected ? styles.daySelected : ""
-          } ${isDisabled ? styles.dayDisabled : ""}`}
-          onClick={() => {
-            if (!isDisabled) {
-              setSelectedDate(date);
-              setCalendarOpen(false);
-            }
-          }}
-        >
-          {d}
-        </div>
-      );
-    }
-    return days;
-  };
-
-  const monthNames = [
-    "Январь",
-    "Февраль",
-    "Март",
-    "Апрель",
-    "Май",
-    "Июнь",
-    "Июль",
-    "Август",
-    "Сентябрь",
-    "Октябрь",
-    "Ноябрь",
-    "Декабрь",
-  ];
 
   return (
     <div className={styles.pageContainer}>
       <div className={styles.officeHeader}>
-        <select
-          className={styles.officeSelect}
-          value={selectedOfficeId || ""}
-          onChange={(e) => setSelectedOfficeId(e.target.value)}
+        <div
+          className={styles.dropdownContainer}
+          style={{ marginBottom: "8px" }}
         >
-          {offices?.map((office) => (
-            <option key={office.id} value={office.id}>
-              {office.name}
-            </option>
-          ))}
-        </select>
+          <button
+            type="button"
+            className={styles.dropdownButton}
+            style={{
+              fontSize: "18px",
+              fontWeight: 700,
+              color: "#0F172A",
+              padding: 0,
+              border: "none",
+              background: "transparent",
+              display: "flex",
+              alignItems: "start",
+              gap: "12px",
+              cursor: "pointer",
+              justifyContent: "flex-start",
+            }}
+            onClick={() => {
+              setOfficeOpen(!officeOpen);
+              setCalendarOpen(false);
+              setDurationOpen(false);
+              setCapacityOpen(false);
+            }}
+          >
+            <span>
+              {currentOffice?.city || currentOffice?.name || "загрузка..."}
+            </span>
+            <span
+              style={{
+                transform: officeOpen ? "rotate(180deg)" : "none",
+                transition: "transform 0.2s",
+                display: "flex",
+                alignItems: "center",
+                paddingTop: "3px",
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M6 9L12 15L18 9"
+                  stroke="#0F172A"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </button>
+
+          {officeOpen && (
+            <div
+              className={styles.dropdownMenu}
+              style={{ top: "100%", left: 0, zIndex: 10, width: "20%" }}
+            >
+              {offices?.map((office) => (
+                <div
+                  key={office.id}
+                  className={`${styles.dropdownItem} ${
+                    selectedOfficeId === office.id
+                      ? styles.dropdownItemActive
+                      : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedOfficeId(office.id);
+                    setOfficeOpen(false);
+                  }}
+                >
+                  {office.name}
+                  {selectedOfficeId === office.id && (
+                    <span style={{ marginLeft: "auto" }}>
+                      <svg
+                        width="14"
+                        height="11"
+                        viewBox="0 0 14 11"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M0.75 5.89286L4.35 9.75L12.75 0.75"
+                          stroke="#475569"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <p className={styles.officeSubtitle}>
           {currentOffice?.address
             ? currentOffice.address.replace(/^[^,]+,\s*/, "")
             : "Адрес загружается..."}{" "}
-          <svg width="4" height="7" viewBox="0 0 4 4" fill="none" xmlns="http://www.w3.org/2000/svg">
-<circle cx="2" cy="1" r="2" fill="#94A3B8"/>
-</svg>
-   Местное время: {currentTime} {currentOffice?.timezone ? "MSK" : ""}
+          <svg
+            style={{ margin: "0 6px 0 6px" }}
+            width="4"
+            height="7"
+            viewBox="0 0 4 4"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="2" cy="1" r="2" fill="#94A3B8" />
+          </svg>
+          Местное время: {currentTime} {currentOffice?.timezone ? "MSK" : ""}
         </p>
       </div>
 
@@ -256,52 +310,13 @@ export const RoomsPage = () => {
               </button>
 
               {calendarOpen && (
-                <div className={styles.calendarPopup}>
-                  <div className={styles.calendarHeader}>
-                    <button
-                      className={styles.calendarNavBtn}
-                      onClick={() =>
-                        setCurrentMonthDate(
-                          new Date(
-                            currentMonthDate.setMonth(
-                              currentMonthDate.getMonth() - 1
-                            )
-                          )
-                        )
-                      }
-                    >
-                      &lt;
-                    </button>
-                    <span>
-                      {monthNames[currentMonthDate.getMonth()]}{" "}
-                      {currentMonthDate.getFullYear()}
-                    </span>
-                    <button
-                      className={styles.calendarNavBtn}
-                      onClick={() =>
-                        setCurrentMonthDate(
-                          new Date(
-                            currentMonthDate.setMonth(
-                              currentMonthDate.getMonth() + 1
-                            )
-                          )
-                        )
-                      }
-                    >
-                      &gt;
-                    </button>
-                  </div>
-                  <div className={styles.weekdaysGrid}>
-                    <div>Пн</div>
-                    <div>Вт</div>
-                    <div>Ср</div>
-                    <div>Чт</div>
-                    <div>Пт</div>
-                    <div>Сб</div>
-                    <div>Вс</div>
-                  </div>
-                  <div className={styles.daysGrid}>{renderCalendarDays()}</div>
-                </div>
+                <Calendar
+                  selectedDate={selectedDate}
+                  onSelectDate={(newDate) => {
+                    setSelectedDate(newDate); 
+                    setCalendarOpen(false); 
+                  }}
+                />
               )}
             </div>
           </div>
@@ -309,7 +324,7 @@ export const RoomsPage = () => {
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>Время начала</label>
             <div style={{ position: "relative" }}>
-              <span style={{ position: "absolute", left: "12px", top: "10px" }}>
+              <span style={{ position: "absolute", top: "12px", left: "16px" }}>
                 <svg
                   width="16"
                   height="16"
@@ -335,7 +350,7 @@ export const RoomsPage = () => {
               <input
                 type="text"
                 className={styles.filterInput}
-                style={{ paddingLeft: "38px" }}
+                style={{ paddingLeft: "36px" }}
                 value={timeValue}
                 onChange={handleTimeChange}
                 placeholder="--:--"
@@ -358,7 +373,12 @@ export const RoomsPage = () => {
                 <span>
                   {durationOptions.find((o) => o.value === duration)?.label}
                 </span>
-                <span>
+                <span
+                  style={{
+                    transform: durationOpen ? "rotate(180deg)" : "none",
+                    transition: "transform 0.2s",
+                  }}
+                >
                   <svg
                     width="10"
                     height="7"
@@ -445,7 +465,12 @@ export const RoomsPage = () => {
                   </svg>
                   Мин. {capacity} чел.
                 </span>
-                <span>
+                <span
+                  style={{
+                    transform: capacityOpen ? "rotate(180deg)" : "none",
+                    transition: "transform 0.2s",
+                  }}
+                >
                   <svg
                     width="10"
                     height="7"
@@ -506,7 +531,9 @@ export const RoomsPage = () => {
 
       <div className={styles.mainInfo}>
         <h2 className={styles.sectionTitle}>
-          {isRoomsLoading ? "Загрузка переговорных..." : "Доступные переговорные в этом офисе"}
+          {isRoomsLoading
+            ? "Загрузка переговорных..."
+            : "Доступные переговорные в этом офисе"}
         </h2>
 
         {isRoomsLoading ? (
@@ -523,112 +550,86 @@ export const RoomsPage = () => {
         ) : isError ? (
           /* Экран ошибки загрузки с твоей точной иконкой из ТЗ */
           <div className={styles.errorContainer}>
-            <svg className={styles.errorIcon} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="120" height="120" rx="60" fill="#FEE2E2"/>
-              <path d="M60 52.9982V62.3315M60 71.6649H60.0233M82.7043 73.9987L64.0376 41.3321C63.6306 40.6139 63.0403 40.0165 62.3271 39.6009C61.6138 39.1853 60.8031 38.9663 59.9776 38.9663C59.1521 38.9663 58.3414 39.1853 57.6281 39.6009C56.9149 40.165 56.3246 40.6139 55.9176 41.3321L37.2509 73.9987C36.8395 74.7112 36.6238 75.5198 36.6256 76.3426C36.6274 77.1653 36.8467 77.973 37.2613 78.6837C37.6759 79.3943 38.2709 79.9828 38.9862 80.3893C39.7015 80.7959 40.5116 81.0061 41.3343 80.9987H78.6676C79.4864 80.9979 80.2905 80.7817 80.9993 80.3717C81.708 79.9618 82.2964 79.3726 82.7055 78.6633C83.1145 77.954 83.3297 77.1496 83.3295 76.3309C83.3293 75.5121 83.1136 74.7078 82.7043 73.9987Z" stroke="#B91C1C" strokeWidth="2" strokeLinecap="round"/>
+            <svg
+              className={styles.errorIcon}
+              viewBox="0 0 120 120"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect width="120" height="120" rx="60" fill="#FEE2E2" />
+              <path
+                d="M60 52.9982V62.3315M60 71.6649H60.0233M82.7043 73.9987L64.0376 41.3321C63.6306 40.6139 63.0403 40.0165 62.3271 39.6009C61.6138 39.1853 60.8031 38.9663 59.9776 38.9663C59.1521 38.9663 58.3414 39.1853 57.6281 39.6009C56.9149 40.165 56.3246 40.6139 55.9176 41.3321L37.2509 73.9987C36.8395 74.7112 36.6238 75.5198 36.6256 76.3426C36.6274 77.1653 36.8467 77.973 37.2613 78.6837C37.6759 79.3943 38.2709 79.9828 38.9862 80.3893C39.7015 80.7959 40.5116 81.0061 41.3343 80.9987H78.6676C79.4864 80.9979 80.2905 80.7817 80.9993 80.3717C81.708 79.9618 82.2964 79.3726 82.7055 78.6633C83.1145 77.954 83.3297 77.1496 83.3295 76.3309C83.3293 75.5121 83.1136 74.7078 82.7043 73.9987Z"
+                stroke="#B91C1C"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
-            
+
             <h3 className={styles.errorTitle}>Не удалось загрузить данные</h3>
-            <p className={styles.errorSubtitle}>Произошла ошибка при загрузке списка переговорных</p>
-            
+            <p className={styles.errorSubtitle}>
+              Произошла ошибка при загрузке списка переговорных
+            </p>
+
             <button className={styles.retryButton} onClick={() => refetch()}>
               Попробовать снова
             </button>
           </div>
-        ) : (() => {
-        // Фильтруем комнаты
-        const filteredRooms = rooms?.filter((room) => room.capacity >= capacity) || [];
+        ) : (
+          (() => {
+            // Фильтруем комнаты
+            const filteredRooms =
+              rooms?.filter((room) => room.capacity >= capacity) || [];
 
-        if (filteredRooms.length === 0) {
-          return (
-            <div className={styles.emptyContainer}>
-              {/* Твоя иконка из ТЗ */}
-              <svg className={styles.emptyIcon} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="120" height="120" rx="60" fill="#E2E8F0"/>
-                <path d="M63.5 51.8333L51.8333 63.5M51.8333 51.8333L63.5 63.5M81.0005 81.0005L70.9671 70.9671M76.3333 57.6667C76.3333 67.976 67.976 76.3333 57.6667 76.3333C47.3574 76.3333 39 67.976 39 57.6667C39 47.3574 47.3574 39 57.6667 39C67.976 39 76.3333 47.3574 76.3333 57.6667Z" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              
-              <h3 className={styles.emptyTitle}>Нет доступных переговорных</h3>
-              <p className={styles.emptySubtitle}>Попробуйте изменить параметры фильтрации или выбрать другой офис</p>
-              
-              <button 
-                className={styles.resetButton}
-                onClick={() => {
-                  setCapacity(4);
-                  setDuration(60);
-                }}
-              >
-                Сбросить фильтры
-              </button>
-            </div>
-          );
-        }
-
-        return (
-          <div className={styles.grid}>
-            {filteredRooms.map((room) => {
-              const isAvailable = room.id !== "room-everest";
-
+            if (filteredRooms.length === 0) {
               return (
-                <div key={room.id} className={styles.card}>
-                  <div className={styles.cardHeader}>
-                    <h3 className={styles.roomName}>{room.name}</h3>
-                    <p className={styles.roomFloor}>{room.floor} этаж</p>
-                  </div>
+                <div className={styles.emptyContainer}>
+                  {/* Твоя иконка из ТЗ */}
+                  <svg
+                    className={styles.emptyIcon}
+                    viewBox="0 0 120 120"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect width="120" height="120" rx="60" fill="#E2E8F0" />
+                    <path
+                      d="M63.5 51.8333L51.8333 63.5M51.8333 51.8333L63.5 63.5M81.0005 81.0005L70.9671 70.9671M76.3333 57.6667C76.3333 67.976 67.976 76.3333 57.6667 76.3333C47.3574 76.3333 39 67.976 39 57.6667C39 47.3574 47.3574 39 57.6667 39C67.976 39 76.3333 47.3574 76.3333 57.6667Z"
+                      stroke="#94A3B8"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
 
-                  <div className={styles.cardDetails}>
-                    <div>
-                      <svg style={{ marginRight: '8px' }} width="16" height="14" viewBox="0 0 16 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M10.3341 13V11.6667C10.3341 10.9594 10.0531 10.2811 9.55297 9.78105C9.05283 9.28095 8.3745 9 7.6672 9H3.66688C2.95958 9 2.28125 9.28095 1.78111 9.78105C1.28097 10.2811 1 10.9594 1 11.6667V13M10.3341 1.08529C10.906 1.23353 11.4124 1.56746 11.774 2.03466C12.1355 2.50186 12.3317 3.07588 12.3317 3.66662C12.3317 4.25736 12.1355 4.83138 11.774 5.29858C11.4124 5.76578 10.906 6.09971 10.3341 6.24795M14.3344 12.9999V11.6666C14.334 11.0757 14.1373 10.5018 13.7753 10.0348C13.4132 9.56783 12.9064 9.2343 12.3342 9.08659M8.33392 3.66667C8.33392 5.13943 7.13992 6.33333 5.66704 6.33333C4.19416 6.33333 3.00016 5.13943 3.00016 3.66667C3.00016 2.19391 4.19416 1 5.66704 1C7.13992 1 8.33392 2.19391 8.33392 3.66667Z" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>
-                      Вместимость: до {room.capacity} человек
-                    </div>
-                    <div>
-                      <svg style={{ marginRight: '5px' }} width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7.6672 3.66688V7.6672L10.3341 9.00064M14.3344 7.6672C14.3344 11.3494 11.3494 14.3344 7.6672 14.3344C3.98501 14.3344 1 11.3494 1 7.6672C1 3.98501 3.98501 1 7.6672 1C11.3494 1 14.3344 3.98501 14.3344 7.6672Z" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>{" "}
-                      {isAvailable ? "Свободна весь день" : "Занята до 15:30"}
-                    </div>
-                  </div>
+                  <h3 className={styles.emptyTitle}>
+                    Нет доступных переговорных
+                  </h3>
+                  <p className={styles.emptySubtitle}>
+                    Попробуйте изменить параметры фильтрации или выбрать другой
+                    офис
+                  </p>
 
-                  <div className={`${styles.statusBanner} ${isAvailable ? styles.statusAvailable : styles.statusUnavailable}`}>
-                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                      {isAvailable ? (
-                        <>
-                          <svg width="6" height="6" viewBox="0 0 6 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="3" cy="3" r="3" fill="#0D9488" />
-                          </svg>
-                          Доступно на выбранное время
-                        </>
-                      ) : (
-                        <>
-                          <svg width="6" height="6" viewBox="0 0 6 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="3" cy="3" r="3" fill="#94A3B8" />
-                          </svg>
-                          Недоступно на выбранное время
-                        </>
-                      )}
-                    </span>
-                  </div>
-
-                  <div className={styles.cardActions}>
-                    <Link to={`/rooms/${room.id}`} className={styles.btnDetails}>
-                      Подробнее
-                    </Link>
-                    <button className={`${styles.btnBook} ${!isAvailable ? styles.btnBookDisabled : ""}`} disabled={!isAvailable}>
-                      Забронировать
-                    </button>
-                  </div>
+                  <button
+                    className={styles.resetButton}
+                    onClick={() => {
+                      setCapacity(4);
+                      setDuration(60);
+                    }}
+                  >
+                    Сбросить фильтры
+                  </button>
                 </div>
               );
-            })}
-          </div>
-        );
-      })()}
+            }
 
+            return (
+              <div className={styles.grid}>
+                {filteredRooms.map((room) => (
+                  <RoomCard key={room.id} room={room} selectedDate={selectedDate} />
+                ))}
+              </div>
+            );
+          })()
+        )}
       </div>
-
-
     </div>
   );
 };

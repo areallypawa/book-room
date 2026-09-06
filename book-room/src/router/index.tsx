@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { App } from '../src/App';
+import { App } from '../App';
 import { RoomsPage } from '../pages/RoomsPage/RoomsPage';
 import { RoomDetailsPage } from '../pages/RoomDetailsPage/RoomDetailsPage';
 import { BookingsPage } from '../pages/BookingsPage';

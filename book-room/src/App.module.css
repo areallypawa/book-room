@@ -19,7 +19,7 @@
     align-items: center;
     gap: 12px;
     font-weight: 700;
-    font-size: 1.15rem;
+    font-size: 20px;
     color: #111827;
   }
   
@@ -55,7 +55,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 0.9rem;
+    font-size: 14px;
     font-weight: 500;
     color: #111827;
   }

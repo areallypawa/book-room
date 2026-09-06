@@ -1,0 +1,122 @@
+.scheduleCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.scheduleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.scheduleTitleWrapper h3 {
+  font-size: 20px;
+  font-weight: 750;
+  color: #0f172a;
+  margin-bottom: 4px;
+  margin-top: 0;
+}
+
+.scheduleTitleWrapper p {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.dateButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dateButton:hover {
+  background: #f8fafc;
+}
+
+/* Таймлайн сетки часов */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin-bottom: 32px;
+}
+
+.timeRow {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  align-items: center;
+  min-height: 48px;
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
+}
+
+.timeLabel {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Слоты бронирования на таймлайне */
+.bookingSlot {
+  position: absolute;
+  left: 70px;
+  right: 0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.slotGreen {
+  background-color: #ccfbf1;
+  color: #115e59;
+  border: 1px solid #99f6e4;
+}
+
+.slotGray {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* Кнопка бронирования внизу */
+.actionsFooter {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bookButton {
+  background-color: #0d9488;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.bookButton:hover {
+  background: #0f766e;
+}
+
+.scheduleTitleWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Небольшой отступ между заголовком и датой */
+}
