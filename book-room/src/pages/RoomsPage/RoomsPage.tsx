@@ -4,7 +4,7 @@ import { api } from "../../api/axios";
 import type { Room, Office } from "../../types/index";
 import styles from "./RoomsPage.module.css";
 import { Calendar } from "../../components/Calendar/Calendar";
-import { RoomCard } from "../../components/RoomCard/RoomCard";
+import { SmartRoomCard } from "../../components/SmartRoomCard/SmartRoomCard";
 
 const fetchOffices = async (): Promise<Office[]> => {
   const { data } = await api.get("/offices");
@@ -20,15 +20,32 @@ const fetchRooms = async (
   duration: number,
   capacity: number
 ): Promise<Room[]> => {
-  const formattedDate = date.toISOString().split("T")[0];
+  const [hours, minutes] = time.split(":").map(Number);
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  const fromStr = `${year}-${pad(month + 1)}-${pad(day)}T${pad(hours)}:${pad(
+    minutes
+  )}:00.000Z`;
+
+  const totalMinutesFromDayStart = hours * 60 + minutes + duration;
+  const endHours = Math.floor(totalMinutesFromDayStart / 60);
+  const endMinutes = totalMinutesFromDayStart % 60;
+
+  const toStr = `${year}-${pad(month + 1)}-${pad(day)}T${pad(endHours)}:${pad(
+    endMinutes
+  )}:00.000Z`;
 
   const { data } = await api.get("/rooms", {
     params: {
       officeId,
-      date: formattedDate,
-      time,
-      duration,
-      capacity,
+      minCapacity: capacity,
+      from: fromStr,
+      to: toStr,
     },
   });
 
@@ -62,11 +79,11 @@ export const RoomsPage = () => {
     { label: "2 часа", value: 120 },
   ];
 
-  const { 
-    data: offices, 
-    isLoading: isOfficesLoading, 
-    isError: isOfficesError, 
-    refetch: refetchOffices 
+  const {
+    data: offices,
+    isLoading: isOfficesLoading,
+    isError: isOfficesError,
+    refetch: refetchOffices,
   } = useQuery({
     queryKey: ["offices"],
     queryFn: fetchOffices,
@@ -89,7 +106,7 @@ export const RoomsPage = () => {
     queryKey: [
       "rooms",
       selectedOfficeId,
-      formattedDate, 
+      formattedDate,
       timeValue,
       duration,
       capacity,
@@ -114,11 +131,22 @@ export const RoomsPage = () => {
   const formatDateLabel = (date: Date) => {
     const day = date.getDate();
     const months = [
-      "января", "февраля", "марта", "апреля", "мая", "июня",
-      "июля", "августа", "сентября", "октября", "ноября", "декабря",
+      "января",
+      "февраля",
+      "марта",
+      "апреля",
+      "мая",
+      "июня",
+      "июля",
+      "августа",
+      "сентября",
+      "октября",
+      "ноября",
+      "декабря",
     ];
     const monthName = months[date.getMonth()];
-    const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    const capitalizedMonth =
+      monthName.charAt(0).toUpperCase() + monthName.slice(1);
     const weekdays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
     const weekdayName = weekdays[date.getDay()];
     return `${day} ${capitalizedMonth}, ${weekdayName}`;
@@ -150,13 +178,30 @@ export const RoomsPage = () => {
     return (
       <div className={styles.pageContainer}>
         <div className={styles.errorContainer} style={{ minHeight: "60vh" }}>
-          <svg className={styles.errorIcon} width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="120" height="120" rx="60" fill="#CCFBF1"/>
-            <path d="M60 55.9998H60.02M60 64.0005H60.02M60 47.9992H60.02M67.9992 55.9998H68.0192M67.9992 64.0005H68.0192M67.9992 47.9992H68.0192M52.0008 55.9998H52.0208M52.0008 64.0005H52.0208M52.0008 47.9992H52.0208M54.0006 80.0017V74.0013C54.0006 73.4708 54.2113 72.962 54.5863 72.5869C54.9614 72.2118 55.47 72.0011 56.0004 72.0011H63.9996C64.53 72.0011 65.0386 72.2118 65.4137 72.5869C65.7887 72.962 65.9994 73.4708 65.9994 74.0013V80.0017M48.0012 39.9985H71.9988C74.2077 39.9985 75.9984 41.7895 75.9984 43.9989V76.0014C75.9984 78.2107 74.2077 80.0017 71.9988 80.0017H48.0012C45.7923 80.0017 44.0016 78.2107 44.0016 76.0014V43.9989C44.0016 41.7895 45.7923 39.9985 48.0012 39.9985Z" stroke="#0D9488" strokeWidth="2" strokeLinecap="round"/>
+          <svg
+            className={styles.errorIcon}
+            width="120"
+            height="120"
+            viewBox="0 0 120 120"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect width="120" height="120" rx="60" fill="#CCFBF1" />
+            <path
+              d="M60 55.9998H60.02M60 64.0005H60.02M60 47.9992H60.02M67.9992 55.9998H68.0192M67.9992 64.0005H68.0192M67.9992 47.9992H68.0192M52.0008 55.9998H52.0208M52.0008 64.0005H52.0208M52.0008 47.9992H52.0208M54.0006 80.0017V74.0013C54.0006 73.4708 54.2113 72.962 54.5863 72.5869C54.9614 72.2118 55.47 72.0011 56.0004 72.0011H63.9996C64.53 72.0011 65.0386 72.2118 65.4137 72.5869C65.7887 72.962 65.9994 73.4708 65.9994 74.0013V80.0017M48.0012 39.9985H71.9988C74.2077 39.9985 75.9984 41.7895 75.9984 43.9989V76.0014C75.9984 78.2107 74.2077 80.0017 71.9988 80.0017H48.0012C45.7923 80.0017 44.0016 78.2107 44.0016 76.0014V43.9989C44.0016 41.7895 45.7923 39.9985 48.0012 39.9985Z"
+              stroke="#0D9488"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
           </svg>
           <h3 className={styles.errorTitle}>Не удалось загрузить офисы</h3>
-          <p className={styles.errorSubtitle}>Сервер долго не отвечает или недоступен. Проверьте соединение.</p>
-          <button className={styles.retryButton} onClick={() => refetchOffices()}>
+          <p className={styles.errorSubtitle}>
+            Сервер долго не отвечает или недоступен. Проверьте соединение.
+          </p>
+          <button
+            className={styles.retryButton}
+            onClick={() => refetchOffices()}
+          >
             Попробовать снова
           </button>
         </div>
@@ -188,7 +233,7 @@ export const RoomsPage = () => {
               justifyContent: "flex-start",
             }}
             onClick={() => {
-              if (isOfficesLoading) return; 
+              if (isOfficesLoading) return;
               setOfficeOpen(!officeOpen);
               setCalendarOpen(false);
               setDurationOpen(false);
@@ -272,13 +317,11 @@ export const RoomsPage = () => {
         </div>
 
         <p className={styles.officeSubtitle}>
-          {isOfficesLoading ? (
-            "Адрес не выбран"
-          ) : currentOffice?.address ? (
-            currentOffice.address.replace(/^[^,]+,\s*/, "")
-          ) : (
-            "Адрес не выбран"
-          )}{" "}
+          {isOfficesLoading
+            ? "Адрес не выбран"
+            : currentOffice?.address
+            ? currentOffice.address.replace(/^[^,]+,\s*/, "")
+            : "Адрес не выбран"}{" "}
           <svg
             style={{ margin: "0 6px 0 6px" }}
             width="4"
@@ -289,7 +332,10 @@ export const RoomsPage = () => {
           >
             <circle cx="2" cy="1" r="2" fill="#94A3B8" />
           </svg>
-          Местное время: {isOfficesLoading ? "--" : `${currentTime} ${currentOffice?.timezone ? "MSK" : ""}`}
+          Местное время:{" "}
+          {isOfficesLoading
+            ? "--"
+            : `${currentTime} ${currentOffice?.timezone ? "MSK" : ""}`}
         </p>
       </div>
 
@@ -331,8 +377,8 @@ export const RoomsPage = () => {
                 <Calendar
                   selectedDate={selectedDate}
                   onSelectDate={(newDate) => {
-                    setSelectedDate(newDate); 
-                    setCalendarOpen(false); 
+                    setSelectedDate(newDate);
+                    setCalendarOpen(false);
                   }}
                 />
               )}
@@ -549,13 +595,13 @@ export const RoomsPage = () => {
 
       <div className={styles.mainInfo}>
         <h2 className={styles.sectionTitle}>
-          {(isOfficesLoading || isRoomsLoading)
+          {isOfficesLoading || isRoomsLoading
             ? "Загрузка переговорных..."
             : "Доступные переговорные в этом офисе"}
         </h2>
 
         {/* Одновременные скелетоны при загрузке */}
-        {(isOfficesLoading || isRoomsLoading) ? (
+        {isOfficesLoading || isRoomsLoading ? (
           <div className={styles.grid}>
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="skeletonCard">
@@ -639,7 +685,13 @@ export const RoomsPage = () => {
             return (
               <div className={styles.grid}>
                 {filteredRooms.map((room) => (
-                  <RoomCard key={room.id} room={room} selectedDate={selectedDate} />
+                  <SmartRoomCard
+                    key={room.id}
+                    room={room}
+                    selectedDate={selectedDate}
+                    timeValue={timeValue}
+                    duration={duration}
+                  />
                 ))}
               </div>
             );
