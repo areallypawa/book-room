@@ -51,9 +51,11 @@ export const BookingModal = ({
   const [durationMinutes, setDurationMinutes] = useState(initialDuration);
   const [comment, setComment] = useState("");
 
-  // Если модалка открылась заново — сбрасываем состояние ошибки.
+  const [isClosing, setIsClosing] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
+      setIsClosing(false);
       setViewState("form");
       setErrorMessage("");
       setHasError(false);
@@ -62,6 +64,19 @@ export const BookingModal = ({
       setDate(initialDate);
     }
   }, [isOpen, initialDate]);
+
+  useEffect(() => {
+    if (initialTime) {
+      setStartTime(initialTime);
+    }
+  }, [initialTime]);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 200);
+  };
 
   if (!isOpen) return null;
 
@@ -76,19 +91,12 @@ export const BookingModal = ({
     { label: "2 часа", value: 120 },
   ];
 
-  // Расчёт времени окончания.
   const calculateEndTime = (start: string, durationMins: number) => {
     const [hours, minutes] = start.split(":").map(Number);
-
     const totalMinutes = hours * 60 + minutes + durationMins;
-
     const endHours = Math.floor(totalMinutes / 60) % 24;
     const endMins = totalMinutes % 60;
-
-    return `${String(endHours).padStart(2, "0")}:${String(endMins).padStart(
-      2,
-      "0"
-    )}`;
+    return `${String(endHours).padStart(2, "0")}:${String(endMins).padStart(2, "0")}`;
   };
 
   const endTime = calculateEndTime(startTime, durationMinutes);
@@ -115,29 +123,23 @@ export const BookingModal = ({
     endDate.setMinutes(endDate.getMinutes() + durationMinutes);
 
     const formatToMSKISO = (d: Date) => {
-        const pad = (n: number) => String(n).padStart(2, '0');
-        const year = d.getFullYear();
-        const month = pad(d.getMonth() + 1);
-        const day = pad(d.getDate());
-        const h = pad(d.getHours());
-        const m = pad(d.getMinutes());
-        const s = pad(d.getSeconds());
-        
-        // Возвращаем формат YYYY-MM-DDTHH:mm:ss+03:00, чтобы бэкенд точно понял часовой пояс
-        return `${year}-${month}-${day}T${h}:${m}:${s}+03:00`;
-      };
-    
-    // Рабочие часы: 09:00 - 20:00.
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const year = d.getFullYear();
+      const month = pad(d.getMonth() + 1);
+      const day = pad(d.getDate());
+      const h = pad(d.getHours());
+      const m = pad(d.getMinutes());
+      const s = pad(d.getSeconds());
+      return `${year}-${month}-${day}T${h}:${m}:${s}+03:00`;
+    };
+
     const workStart = 9 * 60;
     const workEnd = 20 * 60;
-
     const startMinutes = startDate.getHours() * 60 + startDate.getMinutes();
     const endMinutes = endDate.getHours() * 60 + endDate.getMinutes();
 
     if (startMinutes < workStart || endMinutes > workEnd) {
-      setErrorMessage(
-        "Бронирование должно полностью находиться в рабочих часах с 09:00 до 20:00"
-      );
+      setErrorMessage("Бронирование должно полностью находиться в рабочих часах с 09:00 до 20:00");
       setViewState("error");
       return;
     }
@@ -145,73 +147,53 @@ export const BookingModal = ({
     setIsLoading(true);
 
     try {
-        const { data: booking } = await api.post("/bookings", {
-          roomId,
-          title: title.trim(),
-          comment,
-          startsAt: formatToMSKISO(startDate),
-          endsAt: formatToMSKISO(endDate),
-        });
-      
+      const { data: booking } = await api.post("/bookings", {
+        roomId,
+        title: title.trim(),
+        comment,
+        startsAt: formatToMSKISO(startDate),
+        endsAt: formatToMSKISO(endDate),
+      });
+
       const createdStart = new Date(booking.startsAt);
       const createdEnd = new Date(booking.endsAt);
-      
+
       const dateText = createdStart.toLocaleDateString("ru-RU", {
         day: "numeric",
         month: "long",
       });
-      
+
       const startText = createdStart.toLocaleTimeString("ru-RU", {
         hour: "2-digit",
         minute: "2-digit",
-        timeZone: "Europe/Moscow", 
+        timeZone: "Europe/Moscow",
       });
-      
+
       const endText = createdEnd.toLocaleTimeString("ru-RU", {
         hour: "2-digit",
         minute: "2-digit",
         timeZone: "Europe/Moscow",
       });
-      
+
       const successText = `${dateText}, ${startText} - ${endText}`;
-      
+
       onSuccess(successText);
-      onClose();
+      handleClose();
     } catch (error) {
       const apiError = error as ApiError;
-
       const errorCode = apiError.response?.data?.error?.code;
       const serverMessage = apiError.response?.data?.error?.message;
 
-      console.error("Ошибка бронирования:", {
-        status: apiError.response?.status,
-        code: errorCode,
-        message: serverMessage,
-      });
-
-      // Время уже занято.
       if (
         apiError.response?.status === 409 ||
         errorCode === "BOOKING_CONFLICT" ||
         errorCode === "CONFLICT"
       ) {
-        setErrorMessage(
-          "Выбранный интервал был забронирован другим сотрудником. Расписание обновлено."
-        );
-      }
-      // Вышли за рабочие часы.
-      else if (errorCode === "OUTSIDE_WORKING_HOURS") {
-        setErrorMessage(
-          serverMessage ||
-            "Бронирование должно полностью находиться в рабочих часах с 09:00 до 20:00"
-        );
-      }
-      // Любая другая ошибка сервера.
-      else {
-        setErrorMessage(
-          serverMessage ||
-            "Не удалось создать бронирование. Попробуйте ещё раз."
-        );
+        setErrorMessage("Выбранный интервал был забронирован другим сотрудником. Расписание обновлено.");
+      } else if (errorCode === "OUTSIDE_WORKING_HOURS") {
+        setErrorMessage(serverMessage || "Бронирование должно полностью находиться в рабочих часах с 09:00 до 20:00");
+      } else {
+        setErrorMessage(serverMessage || "Не удалось создать бронирование. Попробуйте ещё раз.");
       }
 
       setViewState("error");
@@ -221,34 +203,26 @@ export const BookingModal = ({
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={`${styles.overlay} ${isClosing ? styles.overlayClosing : ""}`} onClick={handleClose}>
       <div
-        className={styles.modal}
+        className={`${styles.modal} ${isClosing ? styles.modalClosing : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
         {viewState === "form" && (
           <>
             <div className={styles.header}>
               <h2 className={styles.title}>Новое бронирование</h2>
-
               <p className={styles.subtitle}>
-                Переговорная:{" "}
-                <span className={styles.roomName}>{roomName}</span>{" "}
-                (Офис Москва, {floor} этаж)
+                Переговорная: <span className={styles.roomName}>{roomName}</span> (Офис Москва, {floor} этаж)
               </p>
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Тема встречи *
-              </label>
-
+              <label className={styles.label}>Тема встречи *</label>
               <input
                 type="text"
                 placeholder="Укажите тему встречи"
-                className={`${styles.input} ${
-                  hasError ? styles.inputError : ""
-                }`}
+                className={`${styles.input} ${hasError ? styles.inputError : ""}`}
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value);
@@ -256,51 +230,38 @@ export const BookingModal = ({
                 }}
                 disabled={isLoading}
               />
-
-              {hasError && (
-                <span className={styles.errorText}>
-                  Обязательное поле
-                </span>
-              )}
+              {hasError && <span className={styles.errorText}>Обязательное поле</span>}
             </div>
 
             <div className={styles.row}>
-              {/* Дата */}
-              <div
-                className={styles.formGroup}
-                style={{ position: "relative" }}
-              >
+              <div className={styles.formGroup} style={{ position: "relative" }}>
                 <label className={styles.label}>Дата</label>
-
                 <input
                   type="text"
                   className={styles.input}
                   readOnly
                   value={formattedDate}
-                  onClick={() =>
-                    setIsCalendarOpen(!isCalendarOpen)
-                  }
+                  onClick={() => setIsCalendarOpen(!isCalendarOpen)}
                   style={{ cursor: "pointer" }}
                 />
 
                 {isCalendarOpen && (
                   <Calendar
                     align="left"
+                    isOpen={isCalendarOpen}
                     selectedDate={date}
                     onSelectDate={(newDate) => {
                       setDate(new Date(newDate));
                       setIsCalendarOpen(false);
                     }}
+                    onToggle={() => setIsCalendarOpen(!isCalendarOpen)}
+                    onClose={() => setIsCalendarOpen(false)}
                   />
                 )}
               </div>
 
-              {/* Время начала */}
               <div className={styles.formGroup}>
-                <label className={styles.label}>
-                  Время начала
-                </label>
-
+                <label className={styles.label}>Время начала</label>
                 <input
                   type="time"
                   className={styles.input}
@@ -316,12 +277,8 @@ export const BookingModal = ({
               </div>
             </div>
 
-            {/* Продолжительность */}
             <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Продолжительность
-              </label>
-
+              <label className={styles.label}>Продолжительность</label>
               <select
                 className={styles.select}
                 value={durationMinutes}
@@ -339,12 +296,8 @@ export const BookingModal = ({
               </select>
             </div>
 
-            {/* Комментарий */}
             <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Комментарий
-              </label>
-
+              <label className={styles.label}>Комментарий</label>
               <textarea
                 placeholder="Дополнительная информация для участников встречи..."
                 className={styles.textarea}
@@ -354,51 +307,29 @@ export const BookingModal = ({
               />
             </div>
 
-            {/* Инфо-баннер */}
             <div className={styles.infoBanner}>
               <ClockGreenIcon />
-
-              Бронирование на {formattedDate},{" "}
-              {startTime} - {endTime} (
-              {durationMinutes < 60
-                ? `${durationMinutes} мин`
-                : `${durationMinutes / 60} час`}
+              Бронирование на {formattedDate}, {startTime} - {endTime} (
+              {durationMinutes < 60 ? `${durationMinutes} мин` : `${durationMinutes / 60} час`}
               )
             </div>
 
-            {/* Кнопки */}
             <div className={styles.footer}>
-              <button
-                className={styles.btnCancel}
-                onClick={onClose}
-                disabled={isLoading}
-              >
+              <button className={styles.btnCancel} onClick={handleClose} disabled={isLoading}>
                 Отмена
               </button>
-
-              <button
-                className={styles.btnSubmit}
-                onClick={handleSubmit}
-                disabled={isLoading}
-              >
+              <button className={styles.btnSubmit} onClick={handleSubmit} disabled={isLoading}>
                 {isLoading ? "Обработка..." : "Забронировать"}
               </button>
             </div>
           </>
         )}
 
-        {/* Экран ошибки */}
         {viewState === "error" && (
           <div className={styles.stateContainer}>
             <ErrorSmallIcon />
-            <h3 className={styles.stateTitle}>
-              Не удалось забронировать
-            </h3>
-
-            <p className={styles.stateDesc}>
-              {errorMessage}
-            </p>
-
+            <h3 className={styles.stateTitle}>Не удалось забронировать</h3>
+            <p className={styles.stateDesc}>{errorMessage}</p>
             <button
               className={styles.btnSubmit}
               style={{ width: "100%" }}

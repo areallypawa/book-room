@@ -73,10 +73,12 @@
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
+  
 }
 
 .cancelButton:hover:not(:disabled) {
   background: #fef2f2;
+  transform: scale(1.02);
 }
 
 .cancelButton:disabled {

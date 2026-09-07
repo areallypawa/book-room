@@ -2,12 +2,18 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/axios";
 import { BookingCard } from "../../components/BookingCard/BookingCard";
+import { DateRangePicker } from "../../components/DateRangePicker/DateRangePicker";
+import { SuccessToast } from "../../components/SuccesToast/SuccessToast";
+import {
+  Dropdown,
+  type DropdownOption,
+} from "../../components/ui/Dropdown/Dropdown";
 import styles from "./BookingsPage.module.css";
-import { 
-  ErrorBigIcon, 
-  EmptyIcon, 
-  ModalRoomIcon, 
-  ModalDateIcon 
+import {
+  ErrorBigIcon,
+  EmptyBookingIcon,
+  ModalRoomIcon,
+  ModalDateIcon,
 } from "../../components/ui/icons";
 
 const fetchOffices = async () => {
@@ -59,16 +65,12 @@ const formatModalDate = (startIso: string, endIso: string) => {
   )}`;
 };
 
-// --- Компоненты Скелетонов ---
 const SkeletonCard = () => (
   <div className={styles.skelCard}>
-    {/* Левый блок с датой */}
     <div className={styles.skelDateBlock}>
       <div className={styles.skelDateTop} />
       <div className={styles.skelDateBottom} />
     </div>
-
-    {/* Центральный блок с текстом */}
     <div className={styles.skelInfoBlock}>
       <div className={styles.skelLineLong} />
       <div className={styles.skelLineShortContainer}>
@@ -79,15 +81,12 @@ const SkeletonCard = () => (
         <div className={styles.skelLineShort3} />
       </div>
     </div>
-
-    {/* Правая кнопка */}
     <div className={styles.skelButton} />
   </div>
 );
 
 const FullPageSkeleton = () => (
   <div className={styles.container}>
-    {/* Шапка */}
     <header className={styles.header}>
       <div className={styles.skelPageTitle} />
       <div className={styles.filters}>
@@ -95,14 +94,10 @@ const FullPageSkeleton = () => (
         <div className={styles.skelFilterBtn} />
       </div>
     </header>
-
-    {/* Табы переключения */}
     <div className={styles.tabs}>
       <div className={styles.skelTab} />
       <div className={styles.skelTab} />
     </div>
-
-    {/* Список карточек-скелетонов */}
     <div className={styles.list}>
       <SkeletonCard />
       <SkeletonCard />
@@ -110,57 +105,96 @@ const FullPageSkeleton = () => (
   </div>
 );
 
-// --- Основной Компонент ---
 export const BookingsPage = () => {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
   const [selectedOfficeId, setSelectedOfficeId] = useState<string | null>(null);
   const [isOfficeDropdownOpen, setIsOfficeDropdownOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<any>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // Стейты для тоста успешной отмены
+  const [showCancelToast, setShowCancelToast] = useState(false);
+  const [canceledBookingInfo, setCanceledBookingInfo] = useState<any>(null);
+
+  // Стейты для выбранного диапазона дат в пикере
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+
   const queryClient = useQueryClient();
 
-  // Запрашиваем офисы
   const { data: offices = [], isLoading: isOfficesLoading } = useQuery({
     queryKey: ["offices"],
     queryFn: fetchOffices,
   });
 
-  // Запрашиваем ВООБЩЕ ВСЕ бронирования для текущего таба (без фильтра по офису)
-  const { 
-    data: allBookings = [], 
+  const {
+    data: allBookings = [],
     isLoading: isBookingsLoading,
-    isError: isBookingsError, 
-    refetch: refetchBookings  
+    isError: isBookingsError,
+    refetch: refetchBookings,
   } = useQuery({
     queryKey: ["bookings", activeTab],
     queryFn: () => fetchBookings(activeTab, null),
   });
 
-  // Считаем количество бронирований для каждого офиса
   const getBookingCountForOffice = (officeId: string) => {
     return allBookings.filter((booking: any) => {
-      // Бэкенд может возвращать officeId внутри объекта room или на верхнем уровне
       const bookingOfficeId = booking.room?.officeId || booking.officeId;
       return bookingOfficeId === officeId;
     }).length;
   };
 
-  // Фильтруем список для отображения, если выбран конкретный офис
+  const bookingDates = allBookings.map((b: any) => b.startsAt.split("T")[0]);
+
+  const filteredByDateBookings = allBookings.filter((booking: any) => {
+    if (!startDate) return true;
+
+    const bookingDate = new Date(booking.startsAt).setHours(0, 0, 0, 0);
+    const start = new Date(startDate).setHours(0, 0, 0, 0);
+
+    if (!endDate) {
+      const endOfDay = new Date(startDate).setHours(23, 59, 59, 999);
+      return bookingDate >= start && bookingDate <= endOfDay;
+    }
+
+    const end = new Date(endDate).setHours(23, 59, 59, 999);
+    return bookingDate >= start && bookingDate <= end;
+  });
+
   const displayedBookings = selectedOfficeId
-    ? allBookings.filter((booking: any) => {
+    ? filteredByDateBookings.filter((booking: any) => {
         const bookingOfficeId = booking.room?.officeId || booking.officeId;
         return bookingOfficeId === selectedOfficeId;
       })
-    : allBookings;
+    : filteredByDateBookings;
 
   const cancelMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/bookings/${id}`),
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
+      const targetBooking = allBookings.find((b: any) => b.id === deletedId);
+      if (targetBooking) {
+        setCanceledBookingInfo(targetBooking);
+        setShowCancelToast(true);
+      }
+
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
-      setBookingToCancel(null); // Закрываем модалку после успешной отмены
+      setBookingToCancel(null);
     },
   });
 
-  const selectedOffice = offices.find((o: any) => o.id === selectedOfficeId);
+  // Подготавливаем опции для нашего компонента Dropdown
+  const officeOptions: DropdownOption[] = [
+    { label: `Все офисы (${allBookings.length})`, value: "all" },
+    ...offices.map((office: any) => {
+      const count = getBookingCountForOffice(office.id);
+      const citySuffix = office.city
+        ? ` (${office.city}${count > 0 ? `, ${count}` : ""})`
+        : "";
+      return {
+        label: `${office.name}${citySuffix}`,
+        value: office.id,
+      };
+    }),
+  ];
 
   if (isOfficesLoading) {
     return <FullPageSkeleton />;
@@ -171,102 +205,35 @@ export const BookingsPage = () => {
       <header className={styles.header}>
         <h1 className={styles.title}>Мои бронирования</h1>
         <div className={styles.filters}>
-          <div className={styles.dropdownContainer}>
-            <button
-              className={styles.filterButton}
-              onClick={() => setIsOfficeDropdownOpen(!isOfficeDropdownOpen)}
-            >
-              {selectedOffice ? selectedOffice.name : "Все офисы"}
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{
-                  transform: isOfficeDropdownOpen ? "rotate(180deg)" : "none",
-                  transition: "transform 0.2s",
-                }}
-              >
-                <path
-                  d="M4 6L8 10L12 6"
-                  stroke="#475569"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
+          
+          <Dropdown
+            options={officeOptions}
+            value={selectedOfficeId ?? "all"}
+            onChange={(val) => setSelectedOfficeId(val === "all" ? null : val)}
+            placeholder="Все офисы"
+            isOpen={isOfficeDropdownOpen}
+            onToggle={(open) => {
+              setIsOfficeDropdownOpen(open);
+              if (open) setIsCalendarOpen(false); // Закрываем календарь дат при открытии офисов
+            }}
+            onClose={() => setIsOfficeDropdownOpen(false)}
+          />
 
-            {/* Выпадающее меню с подсчетом записей */}
-            {isOfficeDropdownOpen && (
-              <div className={styles.dropdownMenu}>
-                <div
-                  className={`${styles.dropdownItem} ${
-                    !selectedOfficeId ? styles.dropdownItemActive : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedOfficeId(null);
-                    setIsOfficeDropdownOpen(false);
-                  }}
-                >
-                  Все офисы ({allBookings.length})
-                </div>
-
-                {offices.map((office: any) => {
-                  const count = getBookingCountForOffice(office.id);
-
-                  return (
-                    <div
-                      key={office.id}
-                      className={`${styles.dropdownItem} ${
-                        selectedOfficeId === office.id
-                          ? styles.dropdownItemActive
-                          : ""
-                      }`}
-                      onClick={() => {
-                        setSelectedOfficeId(office.id);
-                        setIsOfficeDropdownOpen(false);
-                      }}
-                    >
-                      {office.name}
-                      {office.city && (
-                        <span className={styles.cityText}>
-                          {count > 0
-                            ? ` (${office.city}, ${count})`
-                            : ` (${office.city})`}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <button className={styles.filterButton}>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <g clipPath="url(#clip0_20_32378)">
-                <path
-                  d="M5.33333 1.33301V3.99989M10.6667 1.33301V3.99989M2 6.66677H14M3.33333 2.66645H12.6667C13.403 2.66645 14 3.26345 14 3.99989V13.334C14 14.0704 13.403 14.6674 12.6667 14.6674H3.33333C2.59695 14.6674 2 14.0704 2 13.334V3.99989C2 3.26345 2.59695 2.66645 3.33333 2.66645Z"
-                  stroke="#475569"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </g>
-              <defs>
-                <clipPath id="clip0_20_32378">
-                  <rect width="16" height="16" fill="white" />
-                </clipPath>
-              </defs>
-            </svg>
-            За все время
-          </button>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }}
+            bookingDates={bookingDates}
+            isOpen={isCalendarOpen}
+            onToggle={(open) => {
+              setIsCalendarOpen(open);
+              if (open) setIsOfficeDropdownOpen(false); // Закрываем офисы при открытии календаря
+            }}
+            onClose={() => setIsCalendarOpen(false)}
+          />
         </div>
       </header>
 
@@ -302,92 +269,114 @@ export const BookingsPage = () => {
             <SkeletonCard />
           </>
         ) : isBookingsError ? (
-          
-          /* --- СОСТОЯНИЕ ОШИБКИ --- */
           <div className={styles.emptyStateContainer}>
-            <div style={{ marginBottom: "24px", display: "flex", justifyContent: "center" }}>
+            <div
+              style={{
+                marginBottom: "24px",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
               <ErrorBigIcon />
             </div>
             <h3 className={styles.emptyTitle}>Не удалось загрузить данные</h3>
             <p className={styles.emptySubtitle}>
               Произошла ошибка при загрузке ваших бронирований
             </p>
-            <button 
+            <button
               className={styles.emptyButton}
-              onClick={() => refetchBookings()} // Запускает запрос заново
+              onClick={() => refetchBookings()}
             >
               Попробовать снова
             </button>
           </div>
-          
         ) : displayedBookings.length === 0 ? (
-          
-          /* --- ПУСТОЕ СОСТОЯНИЕ --- */
           <div className={styles.emptyStateContainer}>
             <div className={styles.emptyIconWrapper}>
-              <EmptyIcon />
+              <EmptyBookingIcon />
             </div>
             <h3 className={styles.emptyTitle}>Нет бронирований</h3>
             <p className={styles.emptySubtitle}>
-              У вас пока нет {activeTab === "upcoming" ? "предстоящих" : "прошедших"} бронирований.<br />
-              Перейдите в раздел переговорных, чтобы забронировать комнату.
+              За выбранный период нет{" "}
+              {activeTab === "upcoming" ? "предстоящих" : "прошедших"}{" "}
+              бронирований.
             </p>
-            <button 
+            <button
               className={styles.emptyButton}
               onClick={() => {
-                window.location.href = "/"; 
+                window.location.href = "/";
               }}
             >
               Перейти к переговорным
             </button>
           </div>
-          
         ) : (
-          
-          /* --- СПИСОК КАРТОЧЕК --- */
           displayedBookings.map((booking: any) => (
-            <BookingCard 
+            <BookingCard
               key={booking.id}
               booking={booking}
               showCancel={activeTab === "upcoming"}
               onCancel={() => setBookingToCancel(booking)}
-              isCanceling={cancelMutation.isPending && cancelMutation.variables === booking.id}
+              isCanceling={
+                cancelMutation.isPending &&
+                cancelMutation.variables === booking.id
+              }
             />
           ))
-          
         )}
       </div>
 
       {bookingToCancel && (
-        <div className={styles.modalOverlay} onClick={() => setBookingToCancel(null)}>
-          {/* stopPropagation предотвращает закрытие при клике внутри самой белой плашки */}
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setBookingToCancel(null)}
+        >
+          <div
+            className={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className={styles.modalTitle}>Отменить бронирование?</h2>
             <p className={styles.modalDesc}>
-              Это действие нельзя будет отменить. Освободившееся время станет доступно другим сотрудникам.
+              Это действие нельзя будет отменить. Освободившееся время станет
+              доступно другим сотрудникам.
             </p>
 
             <div className={styles.modalBookingCard}>
-              <h4 className={styles.modalBookingTitle}>{bookingToCancel.title}</h4>
+              <h4 className={styles.modalBookingTitle}>
+                {bookingToCancel.title}
+              </h4>
               <div className={styles.modalBookingInfoRow}>
                 <ModalRoomIcon />
-                <span>Комната "{bookingToCancel.room?.name || "Неизвестно"}", {bookingToCancel.room?.floor ? `${bookingToCancel.room.floor} этаж` : ""}</span>
+                <span>
+                  Комната &quot;{bookingToCancel.room?.name || "Неизвестно"}
+                  &quot;,{" "}
+                  {bookingToCancel.room?.floor
+                    ? `${bookingToCancel.room.floor} этаж`
+                    : ""}
+                </span>
               </div>
               <div className={styles.modalBookingInfoRow}>
                 <ModalDateIcon />
-                <span>{formatModalDate(bookingToCancel.startsAt, bookingToCancel.endsAt)}</span>
+                <span>
+                  {formatModalDate(
+                    bookingToCancel.startsAt,
+                    bookingToCancel.endsAt
+                  )}
+                </span>
               </div>
             </div>
 
             <div className={styles.modalActions}>
-              <button 
-                className={styles.btnCancelKeep} 
+              <button
+                type="button"
+                className={styles.btnCancelKeep}
                 onClick={() => setBookingToCancel(null)}
               >
                 Нет, оставить
               </button>
-              <button 
-                className={styles.btnConfirmDelete} 
+              <button
+                type="button"
+                className={styles.btnConfirmDelete}
                 onClick={() => cancelMutation.mutate(bookingToCancel.id)}
                 disabled={cancelMutation.isPending}
               >
@@ -396,6 +385,15 @@ export const BookingsPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showCancelToast && canceledBookingInfo && (
+        <SuccessToast
+          roomName={canceledBookingInfo.room?.name || "Переговорная"}
+          dateTimeText="Время успешно освобождено"
+          title="Бронирование отменено"
+          onClose={() => setShowCancelToast(false)}
+        />
       )}
     </div>
   );

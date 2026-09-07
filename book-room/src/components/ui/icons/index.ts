@@ -1,9 +1,9 @@
 export { ErrorBigIcon, ErrorSmallIcon } from "./ErrorIcons";
-export { EmptyIcon } from "./EmptyIcon";
+export { EmptyIcon, EmptyBookingIcon } from "./EmptyIcon";
 export { ModalRoomIcon } from "./ModalRoomIcon";
 export { ModalDateIcon } from "./ModalDateIcon";
 export { InfoIcon } from "./InfoIcon";
-export { DotSeparatorIcon } from "./DotSeparator";
+export { DotSeparatorIcon } from "./DotSeparatorIcon";
 export { ClockIcon, ClockGreenIcon } from "./ClockIcon";
 export { CapacityIcon, CapacityGreenIcon } from "./CapacityIcon";
 export { StatusDotIcon } from "./StatusDotIcon";
@@ -15,3 +15,5 @@ export { ChevronDownIcon } from "./ChevronDownIcon";
 export { CheckIcon } from "./CheckIcon";
 export { CalendarIcon } from "./CalendarIcon";
 export { HomeIcon } from "./HomeIcon";
+export { WarningIcon } from "./WarningIcon";
+export { LogoIcon } from "./LogoIcon";

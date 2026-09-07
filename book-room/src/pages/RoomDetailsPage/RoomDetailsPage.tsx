@@ -38,7 +38,6 @@ export const RoomDetailsPage = () => {
     enabled: !!roomId,
   });
 
-  
   if (isLoading) {
     return (
       <div className={styles.pageContainer}>
@@ -81,7 +80,7 @@ export const RoomDetailsPage = () => {
   }
 
   if (isError || !room) {
-    return <NotFoundPage  />;
+    return <NotFoundPage />;
   }
 
   return (
@@ -112,11 +111,13 @@ export const RoomDetailsPage = () => {
           officeName={room.officeId ? officeNames[room.officeId] : "Москва"} 
         />
         
-        <RoomSchedule 
-          room={room!}
-          selectedDate={selectedDate} 
-          onDateChange={setSelectedDate} 
-        />
+        <div className={styles.scheduleCardWrapper}>
+          <RoomSchedule 
+            room={room!}
+            selectedDate={selectedDate} 
+            onDateChange={setSelectedDate} 
+          />
+        </div>
       </div>
     </div>
   );

@@ -83,10 +83,14 @@
   display: flex;
   align-items: center;
   
-  /* ВАЖНО для 15-30 минутных слотов */
   overflow: hidden;        
   white-space: nowrap;    
   text-overflow: ellipsis;  
+  transition: transform 0.15s ease;
+}
+
+.bookingSlot:hover {
+  transform: scale(1.02);
 }
 
 .slotGreen {
@@ -174,4 +178,21 @@
 
 .retryButton:hover {
   background-color: #0f766e;
+}
+
+.timeRow {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  align-items: center;
+  min-height: 48px;
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
+  cursor: pointer;
+
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.timeRow:hover {
+  background-color: #f8fafc;
+  transform: scale(1.02);
 }

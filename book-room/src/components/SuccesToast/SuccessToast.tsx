@@ -5,12 +5,14 @@ import styles from "./SuccessToast.module.css";
 interface SuccessToastProps {
   roomName: string;
   dateTimeText: string;
+  title?: string;
   onClose: () => void;
 }
 
 export const SuccessToast = ({
   roomName,
   dateTimeText,
+  title = "Бронирование создано",
   onClose,
 }: SuccessToastProps) => {
   useEffect(() => {
@@ -29,7 +31,7 @@ export const SuccessToast = ({
 
       <div>
         <h4 className={styles.title}>
-          Бронирование создано
+          {title}
         </h4>
 
         <p className={styles.subtitle}>
@@ -39,4 +41,3 @@ export const SuccessToast = ({
     </div>
   );
 };
-

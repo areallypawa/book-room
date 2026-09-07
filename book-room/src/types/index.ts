@@ -1,5 +1,6 @@
 export interface Office {
     id: string;
+    city?: string;
     name: string;
     timezone: string;
   }

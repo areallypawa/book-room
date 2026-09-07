@@ -1,6 +1,5 @@
 /* --- Каркас страницы --- */
 .container {
-    width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 40px 24px;
@@ -399,4 +398,40 @@
 
 .btnConfirmDelete:hover {
   background: #DC2626;
+}
+
+/* Затемнение фона */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  
+  /* Плавное появление самого бэкдропа */
+  opacity: 0;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+/* Контент модалки с использованием нашей анимации pop-in */
+.modalContent {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Применяем пружинную анимацию */
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
 }

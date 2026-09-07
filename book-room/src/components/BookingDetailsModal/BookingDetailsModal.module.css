@@ -1,0 +1,104 @@
+.overlay {
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0;
+    background-color: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    
+    opacity: 0;
+    animation: fadeIn 0.2s ease forwards;
+  }
+  
+  .modal {
+    background: #ffffff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 440px;
+    padding: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  
+  .title {
+    margin: 0 0 16px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+  }
+  
+  /* Карточка-сводка внутри */
+  .bookingCard {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .bookingTitle {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  
+  .infoRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 8px;
+  }
+  
+  .infoRow:last-child {
+    margin-bottom: 0;
+  }
+  
+  .commentRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+  }
+  
+  .commentText {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.4;
+  }
+  
+  .footer {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .btnClose {
+    width: 100%;
+    padding: 12px 16px;
+    background: #0d9488;
+    border: none;
+    color: #ffffff;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .btnClose:hover {
+    background: #0f766e;
+  }
+  
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }

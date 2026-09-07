@@ -4,7 +4,7 @@
   left: 0;
   width: 310px;
   background-color: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #E2E8F0;
   border-radius: 16px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   padding: 20px;
@@ -61,17 +61,26 @@
   border-radius: 50%;
   cursor: pointer;
   color: #374151;
-  transition: background-color 0.1s;
+  transition: background-color 0.2s ease,
+    transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.4);
+  transform-origin: center;
 }
 
-.dayCell:hover:not(.dayDisabled) {
-  background-color: #f3f4f6;
+.dayCell:not(.dayDisabled):not(.dayMuted):hover {
+  background-color: #f4f4f4;
+  transform: scale(1.15);
+  cursor: pointer;
 }
 
 .daySelected {
-  background-color: #0d9488 !important;
+  background-color: rgb(100, 208, 186) !important;
   color: #ffffff;
   font-weight: 600;
+}
+
+.daySelected:hover {
+  background-color: #0d9488 !important;
+  transform: scale(1.15);
 }
 
 .dayMuted {
@@ -81,4 +90,33 @@
 .dayDisabled {
   color: #e5e7eb;
   cursor: not-allowed;
+}
+
+.dropdownContainer {
+  position: relative;
+  width: 100%;
+}
+
+.dropdownButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdownButton:hover {
+  background-color: #f8fafc;
+}
+
+.dropdownButton:focus {
+  border-color: #0d9488;
+  outline: none;
 }

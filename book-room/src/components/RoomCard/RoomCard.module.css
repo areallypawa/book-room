@@ -67,10 +67,11 @@
     font-weight: 600;
     text-decoration: none;
     font-size: 14px;
+    transition: background-color 0.15s ease, transform 0.15s ease;
   }
   
   .btnDetails:hover {
-    text-decoration: underline;
+    transform: scale(1.02);
   }
   
   /* Стили для скелетона карточки */
