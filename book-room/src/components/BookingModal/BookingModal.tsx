@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import styles from "./BookingModal.module.css";
 import { Calendar } from "../Calendar/Calendar";
 import { api } from "../../api/axios";
-import { ClockIcon, ErrorSmallIcon } from "../ui/icons";
+import { ClockGreenIcon, ErrorSmallIcon } from "../ui/icons";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -356,7 +356,7 @@ export const BookingModal = ({
 
             {/* Инфо-баннер */}
             <div className={styles.infoBanner}>
-              <ClockIcon />
+              <ClockGreenIcon />
 
               Бронирование на {formattedDate},{" "}
               {startTime} - {endTime} (

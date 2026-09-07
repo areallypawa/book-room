@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Room } from "../../types/index";
 import styles from "./RoomInfo.module.css";
-import { DisplayIcon, WhiteboardIcon, VideoIcon, CapacityIcon } from "../ui/icons";
+import { DisplayIcon, WhiteboardIcon, VideoIcon, CapacityGreenIcon } from "../ui/icons";
 
 interface RoomInfoProps {
   room: Room;
@@ -22,7 +22,7 @@ export const RoomInfo = ({ room, officeName }: RoomInfoProps) => {
 
       <div className={styles.featuresList}>
         <div className={styles.featureItem}>
-          <CapacityIcon />
+          <CapacityGreenIcon />
           Вместимость: до {room.capacity} человек
         </div>
 

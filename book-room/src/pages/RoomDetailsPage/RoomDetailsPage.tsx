@@ -43,7 +43,7 @@ export const RoomDetailsPage = () => {
     return (
       <div className={styles.pageContainer}>
         <div className={`${styles.skeleton} ${styles.skeletonLine}`} style={{ width: "250px", height: "20px", marginBottom: "24px" }}></div>
-
+      
         <div className={styles.contentGrid}>
           {/* Скелет левой колонки */}
           <div className={styles.infoCard}>
@@ -81,7 +81,7 @@ export const RoomDetailsPage = () => {
   }
 
   if (isError || !room) {
-    return <NotFoundPage />;
+    return <NotFoundPage  />;
   }
 
   return (

@@ -46,7 +46,7 @@ export const BookingCard = ({ booking, showCancel, onCancel, isCanceling }: Book
       {showCancel && (
         <button 
           className={styles.cancelButton}
-          onClick={onCancel} // убрали window.confirm
+          onClick={onCancel} 
           disabled={isCanceling}
         >
           {isCanceling ? "Отмена..." : "Отменить"}

@@ -5,6 +5,13 @@ import type { Room, Office } from "../../types/index";
 import styles from "./RoomsPage.module.css";
 import { Calendar } from "../../components/Calendar/Calendar";
 import { SmartRoomCard } from "../../components/SmartRoomCard/SmartRoomCard";
+import {
+  ChevronDownIcon,
+  CheckIcon,
+  CalendarIcon,
+  ClockIcon,
+  CapacityIcon,
+} from "../../components/ui/icons";
 
 const fetchOffices = async (): Promise<Office[]> => {
   const { data } = await api.get("/offices");
@@ -250,21 +257,9 @@ export const RoomsPage = () => {
                 paddingTop: "3px",
               }}
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M6 9L12 15L18 9"
-                  stroke={isOfficesLoading ? "#94a3b8" : "#0F172A"}
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ChevronDownIcon
+                stroke={isOfficesLoading ? "#94a3b8" : "#0F172A"}
+              />
             </span>
           </button>
 
@@ -289,21 +284,7 @@ export const RoomsPage = () => {
                   {office.name}
                   {selectedOfficeId === office.id && (
                     <span style={{ marginLeft: "auto" }}>
-                      <svg
-                        width="14"
-                        height="11"
-                        viewBox="0 0 14 11"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M0.75 5.89286L4.35 9.75L12.75 0.75"
-                          stroke="#475569"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      <CheckIcon />
                     </span>
                   )}
                 </div>
@@ -351,20 +332,7 @@ export const RoomsPage = () => {
                 <span
                   style={{ display: "flex", alignItems: "center", gap: "8px" }}
                 >
-                  <svg
-                    width="14"
-                    height="16"
-                    viewBox="0 0 14 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M4.33333 1V3.66688M9.66667 1V3.66688M1 6.33376H13M2.33333 2.33344H11.6667C12.403 2.33344 13 2.93044 13 3.66688V13.001C13 13.7374 12.403 14.3344 11.6667 14.3344H2.33333C1.59695 14.3344 1 13.7374 1 13.001V3.66688C1 2.93044 1.59695 2.33344 2.33333 2.33344Z"
-                      stroke="#475569"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <CalendarIcon />
                   {formatDateLabel(selectedDate)}
                 </span>
               </button>
@@ -385,27 +353,7 @@ export const RoomsPage = () => {
             <label className={styles.filterLabel}>Время начала</label>
             <div style={{ position: "relative" }}>
               <span style={{ position: "absolute", top: "12px", left: "16px" }}>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <g clipPath="url(#clip0_20_31134)">
-                    <path
-                      d="M8.00021 3.99989V8.00021L10.6671 9.33365M14.6674 8.00021C14.6674 11.6824 11.6824 14.6674 8.00021 14.6674C4.31801 14.6674 1.33301 11.6824 1.33301 8.00021C1.33301 4.31801 4.31801 1.33301 8.00021 1.33301C11.6824 1.33301 14.6674 4.31801 14.6674 8.00021Z"
-                      stroke="#475569"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_20_31134">
-                      <rect width="16" height="16" fill="white" />
-                    </clipPath>
-                  </defs>
-                </svg>
+                <ClockIcon />
               </span>
               <input
                 type="text"
@@ -439,20 +387,7 @@ export const RoomsPage = () => {
                     transition: "transform 0.2s",
                   }}
                 >
-                  <svg
-                    width="10"
-                    height="7"
-                    viewBox="0 0 10 7"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M1 1L5 5L9 1"
-                      stroke="#475569"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <ChevronDownIcon/>
                 </span>
               </button>
               {durationOpen && (
@@ -471,21 +406,7 @@ export const RoomsPage = () => {
                       {opt.label}{" "}
                       {duration === opt.value && (
                         <span>
-                          <svg
-                            width="14"
-                            height="11"
-                            viewBox="0 0 14 11"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M0.75 5.89286L4.35 9.75L12.75 0.75"
-                              stroke="#475569"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          <CheckIcon/>
                         </span>
                       )}
                     </div>
@@ -509,20 +430,7 @@ export const RoomsPage = () => {
                 <span
                   style={{ display: "flex", alignItems: "center", gap: "8px" }}
                 >
-                  <svg
-                    width="16"
-                    height="14"
-                    viewBox="0 0 16 14"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M10.3341 13V11.6667C10.3341 10.9594 10.0531 10.2811 9.55297 9.78105C9.05283 9.28095 8.3745 9 7.6672 9H3.66688C2.95958 9 2.28125 9.28095 1.78111 9.78105C1.28097 10.2811 1 10.9594 1 11.6667V13M10.3341 1.08529C10.906 1.23353 11.4124 1.56746 11.774 2.03466C12.1355 2.50186 12.3317 3.07588 12.3317 3.66662C12.3317 4.25736 12.1355 4.83138 11.774 5.29858C11.4124 5.76578 10.906 6.09971 10.3341 6.24795M14.3344 12.9999V11.6666C14.334 11.0757 14.1373 10.5018 13.7753 10.0348C13.4132 9.56783 12.9064 9.2343 12.3342 9.08659M8.33392 3.66667C8.33392 5.13943 7.13992 6.33333 5.66704 6.33333C4.19416 6.33333 3.00016 5.13943 3.00016 3.66667C3.00016 2.19391 4.19416 1 5.66704 1C7.13992 1 8.33392 2.19391 8.33392 3.66667Z"
-                      stroke="#475569"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <CapacityIcon/>
                   Мин. {capacity} чел.
                 </span>
                 <span
@@ -531,20 +439,7 @@ export const RoomsPage = () => {
                     transition: "transform 0.2s",
                   }}
                 >
-                  <svg
-                    width="10"
-                    height="7"
-                    viewBox="0 0 10 7"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M1 1L5 5L9 1"
-                      stroke="#475569"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <ChevronDownIcon/>
                 </span>
               </button>
               {capacityOpen && (
@@ -563,21 +458,7 @@ export const RoomsPage = () => {
                       {opt} чел.{" "}
                       {capacity === opt && (
                         <span>
-                          <svg
-                            width="14"
-                            height="11"
-                            viewBox="0 0 14 11"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M0.75 5.89286L4.35 9.75L12.75 0.75"
-                              stroke="#475569"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          <CheckIcon/>
                         </span>
                       )}
                     </div>
@@ -685,8 +566,8 @@ export const RoomsPage = () => {
                     key={room.id}
                     room={room}
                     selectedDate={selectedDate}
-                    timeValue={timeValue} 
-                    duration={duration} 
+                    timeValue={timeValue}
+                    duration={duration}
                   />
                 ))}
               </div>

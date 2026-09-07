@@ -5,7 +5,7 @@ import type { Room } from "../../types/index";
 import { Calendar } from "../../components/Calendar/Calendar";
 import { BookingButton } from "../BookingButton/BookingButton";
 import styles from "./RoomSchedule.module.css";
-
+// Продолжить делить на SVG ! Страницы делить в гемини уже есть
 interface Booking {
   id: string;
   roomId: string;
