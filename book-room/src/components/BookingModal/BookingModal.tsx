@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import styles from "./BookingModal.module.css";
 import { Calendar } from "../Calendar/Calendar";
 import { api } from "../../api/axios";
+import { ClockIcon, ErrorSmallIcon } from "../ui/icons";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -355,29 +356,7 @@ export const BookingModal = ({
 
             {/* Инфо-баннер */}
             <div className={styles.infoBanner}>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M7.99967 14.6663C11.6816 14.6663 14.6663 11.6816 14.6663 7.99967C14.6663 4.31778 11.6816 1.33301 7.99967 1.33301C4.31778 1.33301 1.33301 4.31778 1.33301 7.99967C1.33301 11.6816 4.31778 14.6663 7.99967 14.6663Z"
-                  stroke="#065F46"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                <path
-                  d="M8 4V8L10.6667 9.33333"
-                  stroke="#065F46"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ClockIcon />
 
               Бронирование на {formattedDate},{" "}
               {startTime} - {endTime} (
@@ -411,28 +390,7 @@ export const BookingModal = ({
         {/* Экран ошибки */}
         {viewState === "error" && (
           <div className={styles.stateContainer}>
-            <svg
-              width="64"
-              height="64"
-              viewBox="0 0 64 64"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect
-                width="64"
-                height="64"
-                rx="32"
-                fill="#FEE2E2"
-              />
-
-              <path
-                d="M32.0001 27.9992V33.3325M32.0001 38.6659H32.0134M44.974 39.9995L34.3073 21.3328C34.0747 20.9224 33.7374 20.5811 33.3299 20.3436C32.9223 20.1061 32.459 19.981 31.9873 19.981C31.5156 19.981 31.0523 20.1061 30.6447 20.3436C30.2372 20.5811 29.8999 20.9224 29.6673 21.3328L19.0006 39.9995C18.7655 40.4066 18.6424 40.8687 18.6433 41.3388C18.6444 41.809 18.7697 42.2705 19.0066 42.6766C19.2435 43.0827 19.5835 43.4189 19.9922 43.6513C20.401 43.8836 20.8638 44.0037 21.334 43.9995H42.6673C43.1352 43.999 43.5947 43.8754 43.9997 43.6412C44.4047 43.407 44.7409 43.0703 44.9747 42.665C45.2084 42.2597 45.3314 41.8 45.3312 41.3321C45.3311 40.8643 45.2079 40.4047 44.974 39.9995Z"
-                stroke="#B91C1C"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-
+            <ErrorSmallIcon />
             <h3 className={styles.stateTitle}>
               Не удалось забронировать
             </h3>

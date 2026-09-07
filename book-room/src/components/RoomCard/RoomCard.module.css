@@ -106,3 +106,10 @@
     background-color: #e5e7eb;
     border-radius: 8px;
   }
+
+  .statusIndicator {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+  }

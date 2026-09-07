@@ -1,0 +1,402 @@
+/* --- Каркас страницы --- */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    box-sizing: border-box;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+  
+  .title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0F172A;
+    margin: 0;
+  }
+  
+  .filters {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .filterButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #475569;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .filterButton:hover {
+    background: #F8FAFC;
+  }
+  
+  /* --- Вкладки (Tabs) --- */
+  .tabs {
+    display: flex;
+    gap: 24px;
+    border-bottom: 1px solid #E2E8F0;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .tab {
+    padding-bottom: 12px;
+    cursor: pointer;
+    color: #64748B;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  
+  .tabActive {
+    color: #0D9488;
+    font-weight: 600;
+    border-bottom: 2px solid #0D9488;
+  }
+  
+  /* --- Список и пустые состояния --- */
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .emptyState {
+    color: #64748B;
+    font-size: 16px;
+  }
+  
+  /* --- Выпадающее меню офисов --- */
+  .dropdownContainer {
+    position: relative;
+  }
+  
+  .dropdownMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06);
+    min-width: 220px;
+    z-index: 10;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .dropdownItem {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #475569;
+    transition: background 0.2s;
+  }
+  
+  .dropdownItem:hover {
+    background: #F8FAFC;
+  }
+  
+  .dropdownItemActive {
+    color: #0D9488;
+    font-weight: 600;
+    background: #F0FDF4;
+  }
+  
+  .cityText {
+    color: #94A3B8;
+    font-size: 12px;
+    font-weight: 400;
+  }
+  
+  /* --- Скелетоны карточек бронирования --- */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .skelPageTitle {
+    width: 240px !important;
+    height: 36px !important;
+    background-color: #E2E8F0 !important;
+    border-radius: 8px !important;
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  }
+  
+  .skelFilterBtn {
+    width: 130px !important;
+    height: 40px !important;
+    background-color: #E2E8F0 !important;
+    border-radius: 8px !important;
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  }
+  
+  .skelTab {
+    width: 110px !important;
+    height: 20px !important;
+    background-color: #E2E8F0 !important;
+    border-radius: 4px !important;
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  }
+  .skelCard {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .skelDateBlock {
+    width: 80px;
+    height: 72px;
+    background: #F8FAFC;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-right: 24px;
+  }
+  
+  .skelDateTop {
+    width: 32px;
+    height: 8px;
+    background-color: #E2E8F0;
+    border-radius: 4px;
+  }
+  
+  .skelDateBottom {
+    width: 40px;
+    height: 16px;
+    background-color: #E2E8F0;
+    border-radius: 4px;
+  }
+  
+  .skelInfoBlock {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .skelLineLong {
+    height: 16px;
+    width: 60%;
+    background-color: #E2E8F0;
+    border-radius: 4px;
+  }
+  
+  .skelLineShortContainer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .skelLineShort1 {
+    height: 12px;
+    width: 80px;
+    background-color: #E2E8F0;
+    border-radius: 4px;
+  }
+  
+  .skelLineShort2 {
+    height: 12px;
+    width: 60px;
+    background-color: #E2E8F0;
+    border-radius: 4px;
+  }
+  
+  .skelLineShort3 {
+    height: 12px;
+    width: 100px;
+    background-color: #E2E8F0;
+    border-radius: 4px;
+  }
+  
+  .skelDot {
+    width: 3px;
+    height: 3px;
+    background-color: #CBD5E1;
+    border-radius: 50%;
+  }
+  
+  .skelButton {
+    width: 90px;
+    height: 36px;
+    background-color: #E2E8F0;
+    border-radius: 8px;
+    margin-left: 24px;
+  }
+
+  /* --- Пустое состояние (Empty State) --- */
+.emptyStateContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.emptyIconWrapper {
+  width: 96px;
+  height: 96px;
+  background-color: #CCFBF1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.emptyTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0 0 12px 0;
+}
+
+.emptySubtitle {
+  font-size: 14px;
+  color: #64748B;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+}
+
+.emptyButton {
+  padding: 10px 20px;
+  background-color: #0D9488;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.emptyButton:hover {
+  background-color: #0F766E;
+}
+
+/* --- Модальное окно отмены бронирования --- */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modalContent {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0 0 12px 0;
+}
+
+.modalDesc {
+  font-size: 14px;
+  color: #64748B;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+}
+
+.modalBookingCard {
+  background: #F8FAFC;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modalBookingTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0;
+}
+
+.modalBookingInfoRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+}
+
+.btnCancelKeep {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: #475569;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btnCancelKeep:hover {
+  background: #F8FAFC;
+}
+
+.btnConfirmDelete {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btnConfirmDelete:hover {
+  background: #DC2626;
+}

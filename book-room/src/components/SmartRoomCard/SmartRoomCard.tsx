@@ -41,8 +41,8 @@ export const SmartRoomCard = ({ room, selectedDate, timeValue, duration }: Smart
       const bStart = new Date(b.startsAt);
       const bEnd = new Date(b.endsAt);
       
-      const bStartM = bStart.getUTCHours() * 60 + bStart.getUTCMinutes();
-      const bEndM = bEnd.getUTCHours() * 60 + bEnd.getUTCMinutes();
+      const bStartM = bStart.getHours() * 60 + bStart.getMinutes();
+      const bEndM = bEnd.getHours() * 60 + bEnd.getMinutes();
       
       return Math.max(filterStartMinutes, bStartM) < Math.min(filterEndMinutes, bEndM);
     });
@@ -50,8 +50,8 @@ export const SmartRoomCard = ({ room, selectedDate, timeValue, duration }: Smart
     if (!overlapping) return "Занята на выбранное время";
 
     const endDate = new Date(overlapping.endsAt);
-    const hours = String(endDate.getUTCHours()).padStart(2, "0");
-    const minutes = String(endDate.getUTCMinutes()).padStart(2, "0");
+    const hours = String(endDate.getHours()).padStart(2, "0");
+    const minutes = String(endDate.getMinutes()).padStart(2, "0");
 
     return `Занята до ${hours}:${minutes}`;
   };

@@ -20,25 +20,21 @@ const fetchRooms = async (
   duration: number,
   capacity: number
 ): Promise<Room[]> => {
-  const [hours, minutes] = time.split(":").map(Number);
+  const [hoursStr, minutesStr] = time.split(":");
+  const hours = parseInt(hoursStr || "0", 10);
+  const minutes = parseInt(minutesStr || "0", 10);
 
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const day = date.getDate();
-
-  const pad = (n: number) => String(n).padStart(2, "0");
-
-  const fromStr = `${year}-${pad(month + 1)}-${pad(day)}T${pad(hours)}:${pad(
+  const fromDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    hours,
     minutes
-  )}:00.000Z`;
+  );
+  const fromStr = fromDate.toISOString();
 
-  const totalMinutesFromDayStart = hours * 60 + minutes + duration;
-  const endHours = Math.floor(totalMinutesFromDayStart / 60);
-  const endMinutes = totalMinutesFromDayStart % 60;
-
-  const toStr = `${year}-${pad(month + 1)}-${pad(day)}T${pad(endHours)}:${pad(
-    endMinutes
-  )}:00.000Z`;
+  const toDate = new Date(fromDate.getTime() + duration * 60 * 1000);
+  const toStr = toDate.toISOString();
 
   const { data } = await api.get("/rooms", {
     params: {
@@ -66,7 +62,7 @@ export const RoomsPage = () => {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  const [timeValue, setTimeValue] = useState("15:00");
+  const [timeValue, setTimeValue] = useState("12:00");
 
   const capacityOptions = [2, 4, 6, 8, 10, 12];
   const durationOptions = [
@@ -96,7 +92,7 @@ export const RoomsPage = () => {
   }, [offices, selectedOfficeId]);
 
   const formattedDate = selectedDate.toISOString().split("T")[0];
-
+  const isTimeComplete = timeValue.length >= 4;
   const {
     data: rooms,
     isLoading: isRoomsLoading,
@@ -119,7 +115,7 @@ export const RoomsPage = () => {
         duration,
         capacity
       ),
-    enabled: !!selectedOfficeId,
+    enabled: !!selectedOfficeId && isTimeComplete,
   });
 
   const currentOffice = offices?.find((o) => o.id === selectedOfficeId) as any;

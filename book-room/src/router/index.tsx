@@ -2,7 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { App } from '../App';
 import { RoomsPage } from '../pages/RoomsPage/RoomsPage';
 import { RoomDetailsPage } from '../pages/RoomDetailsPage/RoomDetailsPage';
-import { BookingsPage } from '../pages/BookingsPage';
+import { BookingsPage } from '../pages/BookingsPage/BookingsPage';
 import { NotFoundPage } from '../pages/NotFoundPage/NotFoundPage';
 
 export const router = createBrowserRouter([

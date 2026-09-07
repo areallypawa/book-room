@@ -139,7 +139,7 @@ export const RoomSchedule = ({ room, selectedDate, onDateChange }: RoomScheduleP
     const height = durationHours * hourHeight;
 
     return {
-      top: `${topOffset + 2}px`,
+      top: `${topOffset + 6}px`,
       height: `${height}px`,
     };
   };
