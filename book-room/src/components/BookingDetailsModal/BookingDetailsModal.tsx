@@ -1,10 +1,13 @@
 import styles from "./BookingDetailsModal.module.css";
 import { ModalRoomIcon, ModalDateIcon, InfoIcon } from "../ui/icons";
+import { ExportIcsButton } from "../ExportIcsButton/ExportIcsButton"; 
 
 interface BookingDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   booking: {
+    id: string;          
+    userId: string;      
     title: string;
     comment?: string;
     startsAt: string;
@@ -24,6 +27,9 @@ const formatModalDate = (startIso: string, endIso: string) => {
 
 export const BookingDetailsModal = ({ isOpen, onClose, booking }: BookingDetailsModalProps) => {
   if (!isOpen || !booking) return null;
+
+  // Проверяем, принадлежит ли бронь текущему пользователю
+  const isMyBooking = booking.userId === "user-konstantin";
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -52,6 +58,22 @@ export const BookingDetailsModal = ({ isOpen, onClose, booking }: BookingDetails
         </div>
 
         <div className={styles.footer}>
+          {isMyBooking && (
+            <ExportIcsButton 
+            bookings={[ 
+              {
+                id: booking.id,
+                title: booking.title,
+                comment: booking.comment,
+                startsAt: booking.startsAt,
+                endsAt: booking.endsAt,
+                roomName: booking.room?.name,
+              }
+            ]}
+            fileName={`My_booking.ics`}
+            />
+          )}
+          
           <button type="button" className={styles.btnClose} onClick={onClose}>
             Закрыть
           </button>

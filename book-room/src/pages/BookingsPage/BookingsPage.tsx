@@ -5,6 +5,7 @@ import { BookingCard } from "../../components/BookingCard/BookingCard";
 import { DateRangePicker } from "../../components/DateRangePicker/DateRangePicker";
 import { SuccessToast } from "../../components/Toasts/SuccesToast/SuccessToast";
 import { ErrorToast } from "../../components/Toasts/ErrorToast/ErrorToast";
+import { ExportIcsButton } from "../../components/ExportIcsButton/ExportIcsButton";
 import {
   Dropdown,
   type DropdownOption,
@@ -215,6 +216,7 @@ export const BookingsPage = () => {
     },
   });
 
+
   // Подготавливаем опции для нашего компонента Dropdown
   const officeOptions: DropdownOption[] = [
     { label: `Все офисы (${allBookings.length})`, value: "all" },
@@ -293,6 +295,22 @@ export const BookingsPage = () => {
             activeTab === "past" &&
             `(${displayedBookings.length})`}
         </div>
+
+        {displayedBookings.length > 0 && (
+          <div style={{ marginLeft: "auto" }}>
+            <ExportIcsButton 
+              bookings={displayedBookings.map((b: any) => ({
+                id: b.id,
+                title: b.title,
+                comment: b.comment,
+                startsAt: b.startsAt,
+                endsAt: b.endsAt,
+                roomName: b.room?.name
+              }))} 
+              fileName={`My_${activeTab}_bookings.ics`}
+            />
+          </div>
+        )}
       </div>
 
       <div className={styles.list}>
