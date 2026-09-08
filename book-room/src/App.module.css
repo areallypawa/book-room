@@ -36,6 +36,7 @@
   transition: color 0.3s ease;
 }
 
+.navLink::before,
 .navLink::after {
   content: "";
   position: absolute;
@@ -43,33 +44,31 @@
   left: 0;
   width: 100%;
   height: 3px;
-  background-color: #cbd5e1; 
   border-radius: 2px 2px 0 0;
   transform: scaleX(0);
   transform-origin: center;
-  transition: transform 0.3s ease, background-color 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
-.navLink:hover::after {
+.navLink::before {
+  background-color: #cbd5e1;
+}
+
+.navLink:hover::before {
+  transform: scaleX(1);
+}
+
+.navLink::after {
+  background-color: #0d9488;
+  z-index: 1; 
+}
+
+.navLinkActive::after {
   transform: scaleX(1);
 }
 
 .navLinkActive {
   color: #0d9488;
-}
-
-.navLinkActive::after {
-  content: "";
-  position: absolute;
-  bottom: -17px;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background-color: #0d9488;
-  border-radius: 2px 2px 0 0;
-
-  transform: scaleX(1);
-  background-color: #0d9488;
 }
 
 .userBlock {
@@ -100,8 +99,8 @@
 }
 
 .logoIcon {
-  position: relative; /* Даем контекст для абсолютного позиционирования */
-  background-color: #0d9488; /* Фирменный мятно-зеленый цвет */
+  position: relative; 
+  background-color: #0d9488; 
   width: 36px;
   height: 36px;
   border-radius: 8px;
