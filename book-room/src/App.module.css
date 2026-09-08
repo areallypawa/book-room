@@ -3,6 +3,7 @@
   flex-direction: column;
   background-color: #ffffff;
   font-family: sans-serif;
+  min-height: 100vh;
 }
 
 .header {
@@ -13,8 +14,11 @@
   background-color: #ffffff; 
   justify-content: space-between;
   align-items: center;
-  padding: 16px 150px;
+  /* Используем clamp для плавного изменения отступов по бокам в зависимости от ширины экрана */
+  padding: 16px clamp(16px, 5vw, 150px);
   border-bottom: 1px solid #e5e7eb;
+  gap: 16px;
+  flex-wrap: wrap; /* Позволяет элементам переноситься на новую строку при нехватке места */
 }
 
 .logoContainer {
@@ -24,11 +28,12 @@
   font-weight: 700;
   font-size: 20px;
   color: #111827;
+  white-space: nowrap;
 }
 
 .nav {
   display: flex;
-  gap: 32px;
+  gap: 24px;
 }
 
 .navLink {
@@ -38,6 +43,7 @@
   padding-bottom: 4px;
   position: relative;
   transition: color 0.3s ease;
+  white-space: nowrap;
 }
 
 .navLink::before,
@@ -82,6 +88,7 @@
   font-size: 14px;
   font-weight: 500;
   color: #111827;
+  white-space: nowrap;
 }
 
 .userAvatar {
@@ -95,6 +102,7 @@
   justify-content: center;
   font-size: 0.85rem;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .main {
@@ -111,6 +119,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .offlineBanner {
@@ -124,4 +133,36 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+/* --- Адаптивность для мобильных устройств и планшетов --- */
+@media (max-width: 768px) {
+  .header {
+    padding: 12px 16px;
+    justify-content: center; /* Центрируем элементы шапки на мобилках */
+  }
+
+  .logoContainer {
+    /* Можно выстроить шапку в несколько рядов */
+    order: 1;
+  }
+
+  .userBlock {
+    order: 2;
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+    gap: 20px;
+  }
+
+  /* Корректируем подчеркивание активной ссылки для компактного режима */
+  .navLink::before,
+  .navLink::after {
+    bottom: -9px;
+  }
 }
