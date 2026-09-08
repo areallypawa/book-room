@@ -14,13 +14,13 @@ cd book-room
 ```
 
 2. **Установите зависимости:**
-   
+В ./book-room
 ```bash
 npm install
 ```
 
 3. **Запустите проект в режиме разработки:**
-   
+в папках ./server и ./book-room:
 ```bash
 npm run dev
 ```
@@ -31,14 +31,9 @@ npm run dev
 
 В проекте настроено юнит-тестирование с использованием **Vitest** и **React Testing Library**. Тестами покрыты утилиты работы со временем и изолированные UI-компоненты.
 
-* Запуск тестов в консоли:
+* Запуск тестов в консоли: в папке ./book-room
 ```bash
 npm run test
-```
-
-* Запуск тестов с визуальным UI в браузере:
-```bash
-npm run test:ui
 ```
 
 ## 🛠 Архитектура и стек технологий
@@ -49,6 +44,8 @@ npm run test:ui
 * **Роутинг:** `react-router-dom` (с обработкой 404 ошибок и редиректами).
 * **Стилизация:** CSS Modules. Выбраны для обеспечения строгой изоляции стилей без оверхеда на runtime (в отличие от CSS-in-JS).
 * **Управление состоянием и API:** TanStack Query (React Query) + Axios.
+
+<img width="893" height="550" alt="image" src="https://github.com/user-attachments/assets/9faa8f83-e74f-42c7-9eb4-a1a17c8d6a48" />
 
 ## 💡 Принятые технические решения
 
