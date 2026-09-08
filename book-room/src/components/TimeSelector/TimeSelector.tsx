@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Dropdown, type DropdownOption } from "../ui/Dropdown/Dropdown";
+import { getAvailableTimeSlots, type BookingInterval } from "../../utils/bookingUtils";
 
 export interface BookingSlot {
   startsAt: string;
@@ -19,6 +20,7 @@ interface TimeSelectorProps {
   disabled?: boolean;
   selectedDate?: Date;
   existingBookings?: BookingSlot[];
+  
 }
 
 const durationOptions: DropdownOption[] = [
@@ -48,57 +50,8 @@ export const TimeSelector = ({
 }: TimeSelectorProps) => {
 
   const availableTimeOptions = useMemo(() => {
-    const options: DropdownOption[] = [];
-    const now = new Date();
-    
-    const isToday =
-      selectedDate.getDate() === now.getDate() &&
-      selectedDate.getMonth() === now.getMonth() &&
-      selectedDate.getFullYear() === now.getFullYear();
-
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-    const bookedIntervals = existingBookings.map((b) => {
-      const startMatch = b.startsAt.match(/T(\d{2}):(\d{2})/);
-      const endMatch = b.endsAt.match(/T(\d{2}):(\d{2})/);
-
-      const startHours = startMatch ? parseInt(startMatch[1], 10) : new Date(b.startsAt).getHours();
-      const startMins = startMatch ? parseInt(startMatch[2], 10) : new Date(b.startsAt).getMinutes();
-      
-      const endHours = endMatch ? parseInt(endMatch[1], 10) : new Date(b.endsAt).getHours();
-      const endMins = endMatch ? parseInt(endMatch[2], 10) : new Date(b.endsAt).getMinutes();
-
-      return {
-        startMins: startHours * 60 + startMins,
-        endMins: endHours * 60 + endMins,
-      };
-    });
-
-    for (let h = 9; h <= 19; h++) {
-      for (let m = 0; m < 60; m += 15) {
-        if (h === 19 && m > 45) continue;
-
-        const timeMins = h * 60 + m;
-        const proposedEndMins = timeMins + durationMinutes;
-
-        if (isToday && timeMins <= currentMinutes) {
-          continue;
-        }
-
-        const isOverlapping = bookedIntervals.some(
-          (interval) => timeMins < interval.endMins && proposedEndMins > interval.startMins
-        );
-
-        if (isOverlapping) {
-          continue;
-        }
-
-        const label = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-        options.push({ label, value: label });
-      }
-    }
-
-    return options;
+    const availableSlots = getAvailableTimeSlots(selectedDate, existingBookings, durationMinutes);
+    return availableSlots.map(time => ({ label: time, value: time }));
   }, [selectedDate, existingBookings, durationMinutes]);
 
   if (mode === "timeOnly") {

@@ -5,6 +5,7 @@ import { api } from "../../api/axios";
 import { ClockGreenIcon, ErrorSmallIcon } from "../ui/icons";
 import { TimeSelector } from "../TimeSelector/TimeSelector";
 import { RecurringOptions } from "../RecurringOptions/RecurringOptions";
+import { generateBookingDates } from "../../utils/bookingUtils";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -52,7 +53,6 @@ export const BookingModal = ({
 
   const [isClosing, setIsClosing] = useState(false);
   
-  // СТЕЙТ ДЛЯ ЗАГРУЖЕННЫХ БРОНЕЙ
   const [dayBookings, setDayBookings] = useState<any[]>([]);
 
   useEffect(() => {
@@ -105,7 +105,6 @@ export const BookingModal = ({
         const filtered = data.filter((b: any) => {
           const isSameRoom = b.room?.id === roomId || b.roomId === roomId;
           if (!isSameRoom) return false;
-
           return b.startsAt.startsWith(selectedDateStr);
         });
 
@@ -175,10 +174,8 @@ export const BookingModal = ({
     const workStart = 9 * 60;
     const workEnd = 20 * 60;
 
-    const datesToBook: Date[] = [];
     const baseDate = new Date(date);
     
-     
     if (!startTime || !startTime.includes(":")) {
       setErrorMessage("Пожалуйста, выберите доступное время начала.");
       setViewState("error");
@@ -188,28 +185,13 @@ export const BookingModal = ({
     const [hours, minutes] = startTime.split(":").map(Number);
     baseDate.setHours(hours, minutes, 0, 0);
 
-    if (!isRecurring) {
-      datesToBook.push(baseDate);
-    } else {
-      const weeksToRepeat = 4; 
-      const stepDays = recurrenceInterval === "week" ? 7 : recurrenceInterval === "month" ? 30 : customDaysCount;
-
-      for (let i = 0; i < weeksToRepeat * 7; i += stepDays) {
-        const currentDate = new Date(baseDate);
-        currentDate.setDate(baseDate.getDate() + i);
-
-        const dayOfWeek = currentDate.getDay();
-        if (selectedDays.includes(dayOfWeek)) {
-          if (currentDate >= new Date(new Date().setHours(0,0,0,0))) {
-            datesToBook.push(new Date(currentDate));
-          }
-        }
-      }
-      
-      if (datesToBook.length === 0) {
-        datesToBook.push(baseDate);
-      }
-    }
+    const datesToBook = generateBookingDates(
+      baseDate,
+      isRecurring,
+      selectedDays,
+      recurrenceInterval,
+      customDaysCount
+    );
 
     setIsLoading(true);
 
@@ -320,25 +302,9 @@ export const BookingModal = ({
               {hasError && <span className={styles.errorText}>Обязательное поле</span>}
             </div>
 
-            {/* СТРОКА 1: Дата и Время начала */}
             <div className={styles.row}>
               <div className={styles.formGroup} style={{ position: "relative" }}>
                 <label className={styles.label}>Дата</label>
-                <input
-                  type="text"
-                  className={styles.input}
-                  readOnly
-                  value={formattedDate}
-                  onClick={() => {
-                    setIsCalendarOpen(!isCalendarOpen);
-                    setIsTimeDropdownOpen(false);
-                    setIsDurationDropdownOpen(false);
-                    setIsIntervalDropdownOpen(false);
-                  }}
-                  style={{ cursor: "pointer" }}
-                />
-
-                {isCalendarOpen && (
                   <Calendar
                     align="left"
                     isOpen={isCalendarOpen}
@@ -350,7 +316,6 @@ export const BookingModal = ({
                     onToggle={() => setIsCalendarOpen(!isCalendarOpen)}
                     onClose={() => setIsCalendarOpen(false)}
                   />
-                )}
               </div>
 
               <div className={styles.formGroup}>
@@ -382,7 +347,6 @@ export const BookingModal = ({
               </div>
             </div>
 
-            {/* СТРОКА 2: Продолжительность и Чекбокс повторяющейся встречи */}
             <div className={styles.row} style={{ alignItems: "center" }}>
               <div className={styles.formGroup}>
                 <label className={styles.label}>Продолжительность</label>
@@ -424,7 +388,6 @@ export const BookingModal = ({
               </div>
             </div>
 
-            {/* СТРОКА 3: Блок повторения */}
             {isRecurring && (
               <RecurringOptions
                 selectedDays={selectedDays}
@@ -445,7 +408,6 @@ export const BookingModal = ({
               />
             )}
 
-            {/* СТРОКА 4: Комментарий */}
             <div className={styles.formGroup}>
               <label className={styles.label}>Комментарий</label>
               <textarea
