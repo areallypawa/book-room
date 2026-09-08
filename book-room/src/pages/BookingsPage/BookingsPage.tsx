@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/axios";
 import { BookingCard } from "../../components/BookingCard/BookingCard";
 import { DateRangePicker } from "../../components/DateRangePicker/DateRangePicker";
-import { SuccessToast } from "../../components/SuccesToast/SuccessToast";
+import { SuccessToast } from "../../components/Toasts/SuccesToast/SuccessToast";
+import { ErrorToast } from "../../components/Toasts/ErrorToast/ErrorToast";
 import {
   Dropdown,
   type DropdownOption,
@@ -113,6 +114,7 @@ export const BookingsPage = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   // Стейты для тоста успешной отмены
   const [showCancelToast, setShowCancelToast] = useState(false);
+  const [showErrorToast, setShowErrorToast] = useState(false);
   const [canceledBookingInfo, setCanceledBookingInfo] = useState<any>(null);
 
   // Стейты для выбранного диапазона дат в пикере
@@ -169,15 +171,47 @@ export const BookingsPage = () => {
 
   const cancelMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/bookings/${id}`),
-    onSuccess: (_, deletedId) => {
+    networkMode: "always",
+
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: ["bookings"] });
+
+      const exactQueryKey = ["bookings", activeTab];
+      const previousBookings = queryClient.getQueryData(exactQueryKey);
+
+      queryClient.setQueryData(exactQueryKey, (old: any) => {
+        if (!old) return [];
+        return old.filter((booking: any) => booking.id !== deletedId);
+      });
+
       const targetBooking = allBookings.find((b: any) => b.id === deletedId);
-      if (targetBooking) {
-        setCanceledBookingInfo(targetBooking);
-        setShowCancelToast(true);
+      setBookingToCancel(null);
+
+      return { previousBookings, targetBooking, exactQueryKey };
+    },
+
+    onError: (_err, _deletedId, context) => {
+      if (context?.previousBookings && context?.exactQueryKey) {
+        queryClient.setQueryData(
+          context.exactQueryKey,
+          context.previousBookings
+        );
       }
 
-      queryClient.invalidateQueries({ queryKey: ["bookings"] });
-      setBookingToCancel(null);
+      setShowErrorToast(true);
+    },
+
+    onSuccess: (_data, _deletedId, context) => {
+      if (context?.targetBooking) {
+        setCanceledBookingInfo(context.targetBooking);
+        setShowCancelToast(true);
+      }
+    },
+
+    onSettled: (_data, error) => {
+      if (!error) {
+        queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      }
     },
   });
 
@@ -205,7 +239,6 @@ export const BookingsPage = () => {
       <header className={styles.header}>
         <h1 className={styles.title}>Мои бронирования</h1>
         <div className={styles.filters}>
-          
           <Dropdown
             options={officeOptions}
             value={selectedOfficeId ?? "all"}
@@ -393,6 +426,14 @@ export const BookingsPage = () => {
           dateTimeText="Время успешно освобождено"
           title="Бронирование отменено"
           onClose={() => setShowCancelToast(false)}
+        />
+      )}
+
+      {showErrorToast && (
+        <ErrorToast
+          title="Не удалось отменить"
+          message="Проверьте подключение к сети и попробуйте снова."
+          onClose={() => setShowErrorToast(false)}
         />
       )}
     </div>

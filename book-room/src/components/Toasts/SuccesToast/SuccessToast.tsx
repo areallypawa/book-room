@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { SuccesIcon } from "../ui/icons"
+import { SuccesIcon } from "../../ui/icons"
 import styles from "./SuccessToast.module.css";
 
 interface SuccessToastProps {

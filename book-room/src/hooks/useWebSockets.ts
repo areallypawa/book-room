@@ -30,7 +30,7 @@ export const useWebSockets = () => {
       socket.onopen = () => {
         if (!isComponentMounted) return;
         
-        console.log("WebSocket подключен 🟢");
+        console.log("WebSocket подключен");
         setWsStatus("connected");
 
         // Если это переподключение (resync), инвалидируем весь кэш,

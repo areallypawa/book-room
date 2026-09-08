@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BookingModal } from "../BookingModal/BookingModal";
-import { SuccessToast } from "../SuccesToast/SuccessToast";
+import { SuccessToast } from "../Toasts/SuccesToast/SuccessToast";
 import styles from "./BookigButton.module.css"; 
 
 interface BookingButtonProps {

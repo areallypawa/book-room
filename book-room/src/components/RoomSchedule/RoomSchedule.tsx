@@ -6,7 +6,7 @@ import { Calendar } from "../../components/Calendar/Calendar";
 import { BookingButton } from "../BookingButton/BookingButton";
 import { BookingModal } from "../BookingModal/BookingModal";
 import { BookingDetailsModal } from "../BookingDetailsModal/BookingDetailsModal"; 
-import { SuccessToast } from "../SuccesToast/SuccessToast";
+import { SuccessToast } from "../Toasts/SuccesToast/SuccessToast";
 import styles from "./RoomSchedule.module.css";
 
 interface Booking {
