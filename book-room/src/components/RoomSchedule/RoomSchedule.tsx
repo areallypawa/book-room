@@ -67,7 +67,7 @@ export const RoomSchedule = ({ room, selectedDate, onDateChange }: RoomScheduleP
 
   const hours = [
     "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
-    "15:00", "16:00", "17:00", "18:00", "19:00", "20:00",
+    "15:00", "16:00", "17:00", "18:00", "19:00",
   ];
 
   const {
@@ -80,6 +80,17 @@ export const RoomSchedule = ({ room, selectedDate, onDateChange }: RoomScheduleP
     queryFn: () => fetchRoomBookings(roomId, selectedDate),
     enabled: !!roomId,
   });
+
+  // Вспомогательная функция для проверки, в прошлом ли время
+  const isTimeInPast = (timeString: string) => {
+    const now = new Date();
+    const slotDate = new Date(selectedDate);
+    
+    const [hours, minutes] = timeString.split(':').map(Number);
+    slotDate.setHours(hours, minutes, 0, 0);
+
+    return slotDate < now;
+  };
 
   const formatDateLabel = (date: Date) => {
     const day = date.getDate();
@@ -157,18 +168,24 @@ export const RoomSchedule = ({ room, selectedDate, onDateChange }: RoomScheduleP
       </div>
 
       <div className={styles.timeline}>
-        {hours.map((time, index) => (
-          <div 
-            key={index} 
-            className={styles.timeRow}
-            onClick={() => {
-              setSelectedTimeSlot(time);
-              setIsModalOpen(true);
-            }}
-          >
-            <span className={styles.timeLabel}>{time}</span>
-          </div>
-        ))}
+        {hours.map((time, index) => {
+          const pastTime = isTimeInPast(time);
+
+          return (
+            <div 
+              key={index} 
+              className={`${styles.timeRow} ${pastTime ? styles.timeRowDisabled : ''}`}
+              onClick={() => {
+                if (pastTime) return;
+                
+                setSelectedTimeSlot(time);
+                setIsModalOpen(true);
+              }}
+            >
+              <span className={styles.timeLabel}>{time}</span>
+            </div>
+          );
+        })}
 
         {isLoading ? (
           <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8" }}>Загрузка расписания...</div>
@@ -200,7 +217,6 @@ export const RoomSchedule = ({ room, selectedDate, onDateChange }: RoomScheduleP
         <BookingButton room={room} selectedDate={selectedDate} />
       </div>
 
-      {/* Модалка создания брони по клику на время */}
       <BookingModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -218,7 +234,6 @@ export const RoomSchedule = ({ room, selectedDate, onDateChange }: RoomScheduleP
         }}
       />
 
-      {/* Модалка с информацией о существующей брони */}
       <BookingDetailsModal
         isOpen={!!selectedBookingForDetails}
         onClose={() => setSelectedBookingForDetails(null)}

@@ -11,7 +11,7 @@ export { DisplayIcon} from "./DisplayIcon";
 export { WhiteboardIcon } from "./WhiteBoardIcon";
 export { VideoIcon } from "./VideoIcon";
 export { SuccesIcon } from "./SuccesIcon";
-export { ChevronDownIcon } from "./ChevronDownIcon";
+export { ChevronDownIcon, ChevronRightIcon } from "./ChevronIcon";
 export { CheckIcon } from "./CheckIcon";
 export { CalendarIcon } from "./CalendarIcon";
 export { HomeIcon } from "./HomeIcon";

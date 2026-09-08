@@ -196,3 +196,14 @@
   background-color: #f8fafc;
   transform: scale(1.02);
 }
+
+.timeRowDisabled {
+  background-color: #f8fafc; 
+  opacity: 0.6; 
+  cursor: not-allowed; 
+}
+
+.timeRowDisabled:hover {
+  background-color: #f8fafc;
+  transform: none; 
+}

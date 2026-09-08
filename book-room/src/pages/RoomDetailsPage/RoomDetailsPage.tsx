@@ -7,6 +7,7 @@ import styles from "./RoomDetailsPage.module.css";
 import { NotFoundPage } from "../NotFoundPage/NotFoundPage";
 import { RoomInfo } from "../../components/RoomInfo/RoomInfo";
 import { RoomSchedule } from "../../components/RoomSchedule/RoomSchedule";
+import { ChevronRightIcon } from "../../components/ui/icons";
 
 const fetchRoomDetails = async (roomId: string): Promise<Room> => {
   const { data } = await api.get(`/rooms/${roomId}`);
@@ -87,19 +88,11 @@ export const RoomDetailsPage = () => {
     <div className={styles.pageContainer}>
       <div className={styles.breadcrumbs}>
         <Link to="/rooms" className={styles.breadcrumbLink}>Переговорные</Link>
-        <span>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M5.25 10.5L8.75 7L5.25 3.5" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </span>
+        <ChevronRightIcon />
         <span className={styles.breadcrumbLink}>
           Офис {room.officeId ? officeNames[room.officeId] : "Москва"}
         </span>
-        <span>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M5.25 10.5L8.75 7L5.25 3.5" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </span>
+        <ChevronRightIcon />
         <span className={styles.breadcrumbCurrent}>
           Комната &quot;{room.name}&quot;
         </span>

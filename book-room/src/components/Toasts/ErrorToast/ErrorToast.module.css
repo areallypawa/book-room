@@ -3,8 +3,8 @@
     top: 24px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #FEF2F2; /* Светло-красный фон */
-    border: 1px solid #EF4444; /* Красная рамка */
+    background-color: #FEF2F2;
+    border: 1px solid #EF4444;
     padding: 12px 24px;
     border-radius: 12px;
     z-index: 1000;
@@ -16,7 +16,7 @@
   }
   
   .iconBox {
-    background-color: #FEE2E2; /* Чуть более темный красный для фона иконки */
+    background-color: #FEE2E2;
     border-radius: 50%;
     padding: 4px;
     display: flex;
@@ -24,7 +24,7 @@
   
   .title {
     margin: 0;
-    color: #991B1B; /* Темно-красный текст */
+    color: #991B1B; 
     font-size: 14px;
     font-weight: 600;
   }

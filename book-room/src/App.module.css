@@ -7,6 +7,10 @@
 
 .header {
   display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #ffffff; 
   justify-content: space-between;
   align-items: center;
   padding: 16px 150px;

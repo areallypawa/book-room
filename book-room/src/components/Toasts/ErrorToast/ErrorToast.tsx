@@ -24,7 +24,6 @@ export const ErrorToast = ({
   return (
     <div className={styles.toastWrapper}>
       <div className={styles.iconBox}>
-        {/* Можно задать фиксированный размер иконке, если она слишком большая */}
         <div style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ErrorBigIcon />
         </div>
