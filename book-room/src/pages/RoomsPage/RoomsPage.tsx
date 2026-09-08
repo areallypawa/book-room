@@ -275,7 +275,6 @@ export const RoomsPage = () => {
             />
           </div>
 
-          {/* ФИЛЬТР ВМЕСТИМОСТИ */}
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>Вместимость</label>
             <Dropdown

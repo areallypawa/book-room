@@ -40,7 +40,7 @@ export const Dropdown = ({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (dropdownRef.current && dropdownRef.current.contains(target)) return;
-      onClose(); // Используем внешний метод закрытия
+      onClose(); 
     };
 
     document.addEventListener("mousedown", handleClickOutside);

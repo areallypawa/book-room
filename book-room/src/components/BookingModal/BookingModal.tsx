@@ -3,6 +3,8 @@ import styles from "./BookingModal.module.css";
 import { Calendar } from "../Calendar/Calendar";
 import { api } from "../../api/axios";
 import { ClockGreenIcon, ErrorSmallIcon } from "../ui/icons";
+import { TimeSelector } from "../TimeSelector/TimeSelector";
+import { RecurringOptions } from "../RecurringOptions/RecurringOptions";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -14,18 +16,6 @@ interface BookingModalProps {
   initialTime?: string;
   initialDuration?: number;
   onSuccess: (dateTimeText: string) => void;
-}
-
-interface ApiError {
-  response?: {
-    status?: number;
-    data?: {
-      error?: {
-        code?: string;
-        message?: string;
-      };
-    };
-  };
 }
 
 export const BookingModal = ({
@@ -51,7 +41,19 @@ export const BookingModal = ({
   const [durationMinutes, setDurationMinutes] = useState(initialDuration);
   const [comment, setComment] = useState("");
 
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<number[]>([initialDate.getDay()]);
+  const [recurrenceInterval, setRecurrenceInterval] = useState<string>("week");
+  const [customDaysCount, setCustomDaysCount] = useState<number>(7);
+
+  const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
+  const [isDurationDropdownOpen, setIsDurationDropdownOpen] = useState(false);
+  const [isIntervalDropdownOpen, setIsIntervalDropdownOpen] = useState(false);
+
   const [isClosing, setIsClosing] = useState(false);
+  
+  // СТЕЙТ ДЛЯ ЗАГРУЖЕННЫХ БРОНЕЙ
+  const [dayBookings, setDayBookings] = useState<any[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -62,6 +64,13 @@ export const BookingModal = ({
       setIsCalendarOpen(false);
       setIsLoading(false);
       setDate(initialDate);
+      setIsRecurring(false);
+      setSelectedDays([initialDate.getDay()]);
+      setRecurrenceInterval("week");
+      setCustomDaysCount(7);
+      setIsTimeDropdownOpen(false);
+      setIsDurationDropdownOpen(false);
+      setIsIntervalDropdownOpen(false);
     }
   }, [isOpen, initialDate]);
 
@@ -70,6 +79,44 @@ export const BookingModal = ({
       setStartTime(initialTime);
     }
   }, [initialTime]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchDayBookings = async () => {
+      try {
+        const { data } = await api.get("/bookings");
+        
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const selectedDateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+        const filtered = data.filter((b: any) => {
+          const isSameRoom = b.room?.id === roomId || b.roomId === roomId;
+          if (!isSameRoom) return false;
+
+          return b.startsAt.startsWith(selectedDateStr);
+        });
+
+        setDayBookings(filtered);
+      } catch (error) {
+        console.error("Не удалось загрузить расписание на день", error);
+      }
+    };
+
+    fetchDayBookings();
+  }, [isOpen, date, roomId]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -80,16 +127,15 @@ export const BookingModal = ({
 
   if (!isOpen) return null;
 
-  const durationOptions = [
-    { label: "15 минут", value: 15 },
-    { label: "30 минут", value: 30 },
-    { label: "45 минут", value: 45 },
-    { label: "1 час", value: 60 },
-    { label: "1 час 15 минут", value: 75 },
-    { label: "1 час 30 минут", value: 90 },
-    { label: "1 час 45 минут", value: 105 },
-    { label: "2 часа", value: 120 },
-  ];
+  const toggleDay = (dayValue: number) => {
+    if (selectedDays.includes(dayValue)) {
+      if (selectedDays.length > 1) {
+        setSelectedDays(selectedDays.filter((d) => d !== dayValue));
+      }
+    } else {
+      setSelectedDays([...selectedDays, dayValue]);
+    }
+  };
 
   const calculateEndTime = (start: string, durationMins: number) => {
     const [hours, minutes] = start.split(":").map(Number);
@@ -115,13 +161,6 @@ export const BookingModal = ({
 
     setHasError(false);
 
-    const startDate = new Date(date);
-    const [hours, minutes] = startTime.split(":").map(Number);
-    startDate.setHours(hours, minutes, 0, 0);
-
-    const endDate = new Date(startDate);
-    endDate.setMinutes(endDate.getMinutes() + durationMinutes);
-
     const formatToMSKISO = (d: Date) => {
       const pad = (n: number) => String(n).padStart(2, '0');
       const year = d.getFullYear();
@@ -135,28 +174,75 @@ export const BookingModal = ({
 
     const workStart = 9 * 60;
     const workEnd = 20 * 60;
-    const startMinutes = startDate.getHours() * 60 + startDate.getMinutes();
-    const endMinutes = endDate.getHours() * 60 + endDate.getMinutes();
 
-    if (startMinutes < workStart || endMinutes > workEnd) {
-      setErrorMessage("Бронирование должно полностью находиться в рабочих часах с 09:00 до 20:00");
+    const datesToBook: Date[] = [];
+    const baseDate = new Date(date);
+    
+     
+    if (!startTime || !startTime.includes(":")) {
+      setErrorMessage("Пожалуйста, выберите доступное время начала.");
       setViewState("error");
       return;
+    }
+
+    const [hours, minutes] = startTime.split(":").map(Number);
+    baseDate.setHours(hours, minutes, 0, 0);
+
+    if (!isRecurring) {
+      datesToBook.push(baseDate);
+    } else {
+      const weeksToRepeat = 4; 
+      const stepDays = recurrenceInterval === "week" ? 7 : recurrenceInterval === "month" ? 30 : customDaysCount;
+
+      for (let i = 0; i < weeksToRepeat * 7; i += stepDays) {
+        const currentDate = new Date(baseDate);
+        currentDate.setDate(baseDate.getDate() + i);
+
+        const dayOfWeek = currentDate.getDay();
+        if (selectedDays.includes(dayOfWeek)) {
+          if (currentDate >= new Date(new Date().setHours(0,0,0,0))) {
+            datesToBook.push(new Date(currentDate));
+          }
+        }
+      }
+      
+      if (datesToBook.length === 0) {
+        datesToBook.push(baseDate);
+      }
     }
 
     setIsLoading(true);
 
     try {
-      const { data: booking } = await api.post("/bookings", {
-        roomId,
-        title: title.trim(),
-        comment,
-        startsAt: formatToMSKISO(startDate),
-        endsAt: formatToMSKISO(endDate),
-      });
+      let lastCreatedBooking = null;
 
-      const createdStart = new Date(booking.startsAt);
-      const createdEnd = new Date(booking.endsAt);
+      for (const d of datesToBook) {
+        const startDate = new Date(d);
+        const endDate = new Date(startDate);
+        endDate.setMinutes(endDate.getMinutes() + durationMinutes);
+
+        const startMinutes = startDate.getHours() * 60 + startDate.getMinutes();
+        const endMinutes = endDate.getHours() * 60 + endDate.getMinutes();
+
+        if (startMinutes < workStart || endMinutes > workEnd) {
+          throw new Error("OUTSIDE_WORKING_HOURS");
+        }
+
+        const { data: booking } = await api.post("/bookings", {
+          roomId,
+          title: title.trim(),
+          comment,
+          startsAt: formatToMSKISO(startDate),
+          endsAt: formatToMSKISO(endDate),
+        });
+
+        lastCreatedBooking = booking;
+      }
+
+      if (!lastCreatedBooking) throw new Error("No bookings created");
+
+      const createdStart = new Date(lastCreatedBooking.startsAt);
+      const createdEnd = new Date(lastCreatedBooking.endsAt);
 
       const dateText = createdStart.toLocaleDateString("ru-RU", {
         day: "numeric",
@@ -175,25 +261,26 @@ export const BookingModal = ({
         timeZone: "Europe/Moscow",
       });
 
-      const successText = `${dateText}, ${startText} - ${endText}`;
+      const successText = isRecurring 
+        ? `${dateText} и др., ${startText} - ${endText}` 
+        : `${dateText}, ${startText} - ${endText}`;
 
       onSuccess(successText);
       handleClose();
-    } catch (error) {
-      const apiError = error as ApiError;
-      const errorCode = apiError.response?.data?.error?.code;
-      const serverMessage = apiError.response?.data?.error?.message;
+    } catch (error: any) {
+      const errorCode = error.response?.data?.error?.code || error.message;
+      const serverMessage = error.response?.data?.error?.message;
 
       if (
-        apiError.response?.status === 409 ||
+        error.response?.status === 409 ||
         errorCode === "BOOKING_CONFLICT" ||
         errorCode === "CONFLICT"
       ) {
-        setErrorMessage("Выбранный интервал был забронирован другим сотрудником. Расписание обновлено.");
+        setErrorMessage("Один из интервалов пересекается с существующей бронью. Выберите другое время.");
       } else if (errorCode === "OUTSIDE_WORKING_HOURS") {
-        setErrorMessage(serverMessage || "Бронирование должно полностью находиться в рабочих часах с 09:00 до 20:00");
+        setErrorMessage("Бронирование должно полностью находиться в рабочих часах с 09:00 до 20:00");
       } else {
-        setErrorMessage(serverMessage || "Не удалось создать бронирование. Попробуйте ещё раз.");
+        setErrorMessage(serverMessage || "Не удалось создать бронирование. Возможно, некоторые слоты уже заняты.");
       }
 
       setViewState("error");
@@ -233,6 +320,7 @@ export const BookingModal = ({
               {hasError && <span className={styles.errorText}>Обязательное поле</span>}
             </div>
 
+            {/* СТРОКА 1: Дата и Время начала */}
             <div className={styles.row}>
               <div className={styles.formGroup} style={{ position: "relative" }}>
                 <label className={styles.label}>Дата</label>
@@ -241,7 +329,12 @@ export const BookingModal = ({
                   className={styles.input}
                   readOnly
                   value={formattedDate}
-                  onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                  onClick={() => {
+                    setIsCalendarOpen(!isCalendarOpen);
+                    setIsTimeDropdownOpen(false);
+                    setIsDurationDropdownOpen(false);
+                    setIsIntervalDropdownOpen(false);
+                  }}
                   style={{ cursor: "pointer" }}
                 />
 
@@ -262,40 +355,97 @@ export const BookingModal = ({
 
               <div className={styles.formGroup}>
                 <label className={styles.label}>Время начала</label>
-                <input
-                  type="time"
-                  className={styles.input}
-                  value={startTime}
-                  min="09:00"
-                  max="19:45"
-                  onChange={(e) => {
-                    setStartTime(e.target.value);
+                <TimeSelector
+                  startTime={startTime}
+                  onStartTimeChange={(time) => {
+                    setStartTime(time);
                     setViewState("form");
                   }}
+                  isTimeDropdownOpen={isTimeDropdownOpen}
+                  onToggleTimeDropdown={(open) => {
+                    setIsTimeDropdownOpen(open);
+                    if (open) {
+                      setIsCalendarOpen(false);
+                      setIsDurationDropdownOpen(false);
+                      setIsIntervalDropdownOpen(false);
+                    }
+                  }}
+                  durationMinutes={durationMinutes}
+                  onDurationChange={() => {}}
+                  isDurationDropdownOpen={false}
+                  onToggleDurationDropdown={() => {}}
+                  mode="timeOnly"
                   disabled={isLoading}
+                  selectedDate={date}
+                  existingBookings={dayBookings}
                 />
               </div>
             </div>
 
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Продолжительность</label>
-              <select
-                className={styles.select}
-                value={durationMinutes}
-                onChange={(e) => {
-                  setDurationMinutes(Number(e.target.value));
-                  setViewState("form");
-                }}
-                disabled={isLoading}
-              >
-                {durationOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+            {/* СТРОКА 2: Продолжительность и Чекбокс повторяющейся встречи */}
+            <div className={styles.row} style={{ alignItems: "center" }}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Продолжительность</label>
+                <TimeSelector
+                  startTime={startTime}
+                  onStartTimeChange={() => {}}
+                  isTimeDropdownOpen={false}
+                  onToggleTimeDropdown={() => {}}
+                  durationMinutes={durationMinutes}
+                  onDurationChange={(dur) => {
+                    setDurationMinutes(dur);
+                    setViewState("form");
+                  }}
+                  isDurationDropdownOpen={isDurationDropdownOpen}
+                  onToggleDurationDropdown={(open) => {
+                    setIsDurationDropdownOpen(open);
+                    if (open) {
+                      setIsCalendarOpen(false);
+                      setIsTimeDropdownOpen(false);
+                      setIsIntervalDropdownOpen(false);
+                    }
+                  }}
+                  mode="durationOnly"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className={styles.formGroup} style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "24px" }}>
+                <input 
+                  type="checkbox" 
+                  id="recurringCheckbox"
+                  checked={isRecurring}
+                  onChange={(e) => setIsRecurring(e.target.checked)}
+                  style={{ width: "18px", height: "18px", accentColor: "#0D9488", cursor: "pointer" }}
+                />
+                <label htmlFor="recurringCheckbox" style={{ fontSize: "14px", fontWeight: 500, color: "#374151", cursor: "pointer" }}>
+                  Повторять встречу
+                </label>
+              </div>
             </div>
 
+            {/* СТРОКА 3: Блок повторения */}
+            {isRecurring && (
+              <RecurringOptions
+                selectedDays={selectedDays}
+                onToggleDay={toggleDay}
+                recurrenceInterval={recurrenceInterval}
+                onIntervalChange={setRecurrenceInterval}
+                isIntervalDropdownOpen={isIntervalDropdownOpen}
+                onToggleIntervalDropdown={(open) => {
+                  setIsIntervalDropdownOpen(open);
+                  if (open) {
+                    setIsCalendarOpen(false);
+                    setIsTimeDropdownOpen(false);
+                    setIsDurationDropdownOpen(false);
+                  }
+                }}
+                customDaysCount={customDaysCount}
+                onCustomDaysChange={setCustomDaysCount}
+              />
+            )}
+
+            {/* СТРОКА 4: Комментарий */}
             <div className={styles.formGroup}>
               <label className={styles.label}>Комментарий</label>
               <textarea
