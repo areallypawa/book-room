@@ -11,6 +11,7 @@ import {
   CapacityIcon,
   DotSeparatorIcon,
   EmptyIcon,
+  ErrorBigIcon,
 } from "../../components/ui/icons";
 
 const fetchOffices = async (): Promise<Office[]> => {
@@ -165,6 +166,7 @@ export const RoomsPage = () => {
     return (
       <div className={styles.pageContainer}>
         <div className={styles.errorContainer} style={{ minHeight: "60vh" }}>
+          <ErrorBigIcon />
           <h3 className={styles.errorTitle}>Не удалось загрузить офисы</h3>
           <p className={styles.errorSubtitle}>
             Сервер долго не отвечает или недоступен. Проверьте соединение.

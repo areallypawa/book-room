@@ -1,49 +1,64 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+
+export type WsStatus = "connecting" | "connected" | "disconnected" | "reconnecting";
 
 export const useWebSockets = () => {
   const queryClient = useQueryClient();
+  const [wsStatus, setWsStatus] = useState<WsStatus>("connecting");
+  
+  // Используем ref, чтобы знать, было ли это первичное подключение или реконнект
+  const wasConnectedRef = useRef(false);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    // Здесь берем хост из текущего окна, но хардкодим порт бэкенда (3000)
     const hostname = window.location.hostname;
     const wsUrl = `ws://${hostname}:3000/api/v1/ws`; 
     
     let socket: WebSocket | null = null;
-    let reconnectTimeout: ReturnType<typeof setTimeout>;
+    let isComponentMounted = true;
 
     const connect = () => {
+      if (wasConnectedRef.current) {
+        setWsStatus("reconnecting");
+      } else {
+        setWsStatus("connecting");
+      }
+
       socket = new WebSocket(wsUrl);
 
       socket.onopen = () => {
-        console.log("WebSocket подключен");
+        if (!isComponentMounted) return;
+        
+        console.log("WebSocket подключен 🟢");
+        setWsStatus("connected");
+
+        // Если это переподключение (resync), инвалидируем весь кэш,
+        // чтобы React Query автоматически перезапросил актуальные данные по REST API.
+        if (wasConnectedRef.current) {
+          console.log("Синхронизация данных после переподключения...");
+          queryClient.invalidateQueries();
+        }
+        wasConnectedRef.current = true;
       };
 
       socket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          console.log("Получено WS сообщение:", message);
-
-          // Обработка событий в зависимости от типа
+          
           switch (message.type) {
             case "booking.created":
             case "booking.cancelled":
-              // Если бронь создана или отменена, обновляем расписание комнат и список броней пользователя
               queryClient.invalidateQueries({ queryKey: ["room-bookings"] });
               queryClient.invalidateQueries({ queryKey: ["room-bookings-card"] });
               queryClient.invalidateQueries({ queryKey: ["bookings"] });
               break;
-
             case "room.availability_changed":
-              // Если изменилась доступность, обновляем список комнат на главной
               queryClient.invalidateQueries({ queryKey: ["rooms"] });
               break;
-              
             case "data.reset":
-               // При сбросе данных обновляем вообще всё
                queryClient.invalidateQueries();
                break;
-
             default:
               queryClient.invalidateQueries({ queryKey: ["rooms"] });
               queryClient.invalidateQueries({ queryKey: ["room-bookings"] });
@@ -53,24 +68,29 @@ export const useWebSockets = () => {
         }
       };
 
-      socket.onerror = (error) => {
-        console.error("Ошибка WebSocket:", error);
-      };
-
       socket.onclose = () => {
+        if (!isComponentMounted) return;
+        
         console.log("WebSocket отключен. Пробуем переподключиться через 3 сек...");
-        reconnectTimeout = setTimeout(connect, 3000);
+        setWsStatus("disconnected");
+        
+        // Запускаем цикл переподключения
+        reconnectTimeoutRef.current = setTimeout(connect, 3000);
       };
     };
 
     connect();
 
-    // Очистка при размонтировании
     return () => {
-      clearTimeout(reconnectTimeout);
+      isComponentMounted = false;
+      clearTimeout(reconnectTimeoutRef.current);
       if (socket) {
+        
+        socket.onclose = null; 
         socket.close();
       }
     };
   }, [queryClient]);
+
+  return { wsStatus };
 };

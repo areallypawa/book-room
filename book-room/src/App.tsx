@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { Outlet, NavLink } from "react-router-dom";
 import { useWebSockets } from "./hooks/useWebSockets"; 
-import { WarningIcon, LogoIcon } from "./components/ui/icons"; 
+import { WarningIcon, LogoIcon } from "./components/ui/icons";
 import styles from "./App.module.css";
 
 export const App = () => {
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-
-  useWebSockets(); 
+  const [isNetworkOffline, setIsNetworkOffline] = useState(!navigator.onLine);
+  // Достаем статус веб-сокета из хука
+  const { wsStatus } = useWebSockets(); 
 
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => setIsNetworkOffline(false);
+    const handleOffline = () => setIsNetworkOffline(true);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     return () => {
@@ -20,21 +20,31 @@ export const App = () => {
     };
   }, []);
 
+  // Показываем баннер, если нет интернета ИЛИ отвалился веб-сокет
+  const showWarningBanner = isNetworkOffline || wsStatus === "disconnected" || wsStatus === "reconnecting";
+
+  const getBannerMessage = () => {
+    if (isNetworkOffline) return "Отсутствует подключение к интернету.";
+    if (wsStatus === "reconnecting") return "Связь с сервером потеряна. Переподключение...";
+    return "Связь с сервером потеряна.";
+  };
+
   return (
     <div className={styles.layout}>
-      {isOffline && (
+      {/* Динамический желтый баннер сверху */}
+      {showWarningBanner && (
         <div className={styles.offlineBanner}>
           <span>
-            <WarningIcon /> 
+            <WarningIcon />
           </span>{" "}
-          Соединение потеряно. Переподключение...
+          {getBannerMessage()}
         </div>
       )}
 
       <header className={styles.header}>
         <div className={styles.logoContainer}>
           <div className={styles.logoIcon}>
-            <LogoIcon /> 
+            <LogoIcon />
           </div>
           <span>BookRoom</span>
         </div>
